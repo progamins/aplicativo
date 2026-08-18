@@ -2,6 +2,7 @@ package com.example.login.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,15 +44,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.login.data.model.Justificacion
-import com.example.login.ui.theme.Surface as CardColor
-import com.example.login.ui.theme.TextMuted
-import com.example.login.ui.theme.TextPrimary
+import com.example.login.ui.components.CampusTopBar
 
 @Composable
 fun JustificacionesScreen(
     state: JustificacionesUiState,
     onLoad: () -> Unit,
     onCreate: (motivo: String, fecha: String, detalle: String, onDone: () -> Unit) -> Unit,
+    onBack: () -> Unit,
 ) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -63,52 +63,55 @@ fun JustificacionesScreen(
             ExtendedFloatingActionButton(
                 onClick = { showDialog = true },
                 icon = { Icon(Icons.Filled.Add, null) },
-                text = { Text("Nueva") },
+                text = { Text("Nueva justificación") },
             )
         },
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(padding),
         ) {
-            Text(
-                text = "Justificaciones",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-            )
-            Text(
-                text = "${state.items.size} registradas",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextMuted,
-            )
-            Spacer(Modifier.height(16.dp))
-
-            when {
-                state.isLoading -> Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.height(36.dp))
-                }
-
-                state.error != null && state.items.isEmpty() -> Text(
-                    text = state.error,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(vertical = 16.dp),
+            CampusTopBar(title = "Justificaciones", onBack = onBack)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = "${state.items.size} registradas",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(12.dp))
 
-                state.items.isEmpty() -> Text(
-                    text = "Aún no has registrado justificaciones.\nPulsa “Nueva” para crear una.",
-                    color = TextMuted,
-                    modifier = Modifier.padding(vertical = 16.dp),
-                )
+                when {
+                    state.isLoading -> Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.height(36.dp))
+                    }
 
-                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(state.items, key = { it.id }) { justificacion ->
-                        JustificacionCard(justificacion)
+                    state.error != null && state.items.isEmpty() -> Text(
+                        text = state.error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(vertical = 16.dp),
+                    )
+
+                    state.items.isEmpty() -> Text(
+                        text = "Aún no has registrado justificaciones.\nPulsa “Nueva” para crear una.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 16.dp),
+                    )
+
+                    else -> LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(bottom = 90.dp),
+                    ) {
+                        items(state.items, key = { it.id }) { justificacion ->
+                            JustificacionCard(justificacion)
+                        }
                     }
                 }
             }
@@ -128,8 +131,8 @@ fun JustificacionesScreen(
 private fun JustificacionCard(justificacion: Justificacion) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = CardColor,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.06f)),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -138,17 +141,25 @@ private fun JustificacionCard(justificacion: Justificacion) {
                     text = justificacion.motivo,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(Modifier.padding(start = 8.dp))
                 EstadoChip(estado = justificacion.estado)
             }
             Spacer(Modifier.height(4.dp))
-            Text("Fecha: ${justificacion.fecha}", fontSize = 12.sp, color = TextMuted)
+            Text(
+                text = "Fecha: ${justificacion.fecha}",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             if (justificacion.detalle.isNotBlank()) {
                 Spacer(Modifier.height(6.dp))
-                Text(justificacion.detalle, fontSize = 13.sp, color = TextMuted)
+                Text(
+                    text = justificacion.detalle,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

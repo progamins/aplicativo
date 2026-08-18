@@ -2,6 +2,8 @@ import "dotenv/config";
 
 const bool = (v, def) => (v === undefined ? def : v === "true" || v === "1");
 
+const dbDriver = process.env.DB_DRIVER || "sqlite";
+
 export const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT || 3000),
@@ -24,7 +26,7 @@ export const config = {
     .map((s) => s.trim())
     .filter(Boolean),
 
-  dbDriver: process.env.DB_DRIVER || "sqlite",
+  dbDriver,
   dbPath: process.env.DB_PATH || "./data/app.db",
 
   // Configuración MySQL (modo compatible con el sistema académico iestp)
@@ -42,9 +44,38 @@ export const config = {
     refreshTable: process.env.DB_REFRESH_TABLE || "refresh_tokens",
     justificacionesTable: process.env.DB_JUSTIFICACIONES_TABLE || "justificaciones",
     asistenciasTable: process.env.DB_ASISTENCIAS_TABLE || "asistencias",
+    profileTable: process.env.DB_PROFILE_TABLE || "user_profiles",
+    pagosTable: process.env.DB_PAGOS_TABLE || "pagos",
+    horariosTable: process.env.DB_HORARIOS_TABLE || "horarios",
+    cursosTable: process.env.DB_CURSOS_TABLE || "cursos",
   },
 
-  enableRegister: bool(process.env.ENABLE_REGISTER, true),
+  // Modo iestp (DB_DRIVER=iestp): integración con la base de datos real del
+  // sistema académico del instituto (https://github.com/progamins/iestp).
+  // Las tablas son las del sistema iestp; la API solo crea su tabla de refresh
+  // tokens y respeta la fuente de verdad del instituto.
+  iestp: {
+    host: process.env.DB_HOST || "localhost",
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER || "",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "",
+    refreshTable: process.env.DB_REFRESH_TABLE || "refresh_tokens",
+    estudiantesTable: process.env.IESTP_ESTUDIANTES_TABLE || "estudiantes",
+    pagosTable: process.env.IESTP_PAGOS_TABLE || "pagos",
+    asistenciasTable: process.env.IESTP_ASISTENCIAS_TABLE || "asistencias",
+    estadoAsistenciaTable: process.env.IESTP_ESTADO_ASISTENCIA_TABLE || "estado_asistencia",
+    justificacionesTable: process.env.IESTP_JUSTIFICACIONES_TABLE || "justificaciones",
+    // Tipo por defecto al crear justificaciones desde la app (columna
+    // TipoJustificacionID del sistema iestp). Vacío = se omite la columna.
+    justificacionTipoId: process.env.IESTP_JUSTIFICACION_TIPO_ID || null,
+    unidadesTable: process.env.IESTP_UNIDADES_TABLE || "unidades_didacticas",
+    programasTable: process.env.IESTP_PROGRAMAS_TABLE || "programas_estudio",
+  },
+
+  // En modo iestp el registro está deshabilitado por defecto: los estudiantes
+  // los gestiona el sistema web del instituto, no la app.
+  enableRegister: bool(process.env.ENABLE_REGISTER, dbDriver !== "iestp"),
 };
 
 if (config.nodeEnv === "production" && config.jwtSecret === "dev-only-secret-change-me") {

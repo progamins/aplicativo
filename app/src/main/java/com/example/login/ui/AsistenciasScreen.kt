@@ -2,6 +2,7 @@ package com.example.login.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,38 +26,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.login.data.model.Asistencia
+import com.example.login.ui.components.CampusTopBar
 import com.example.login.ui.theme.Amber
 import com.example.login.ui.theme.Green
-import com.example.login.ui.theme.Surface as CardColor
-import com.example.login.ui.theme.TextMuted
-import com.example.login.ui.theme.TextPrimary
 
 @Composable
 fun AsistenciasScreen(
     state: AsistenciasUiState,
     onLoad: () -> Unit,
+    onBack: () -> Unit,
 ) {
     LaunchedEffect(Unit) { onLoad() }
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
+            .fillMaxSize(),
     ) {
-        Text(
-            text = "Asistencias",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-        )
-        Text(
-            text = "${state.items.size} registros",
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextMuted,
-        )
-        Spacer(Modifier.height(16.dp))
+        CampusTopBar(title = "Asistencias", onBack = onBack)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+        ) {
+            Text(
+                text = "${state.items.size} registros",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (state.items.isNotEmpty()) {
+                val presentes = state.items.count { it.estado.equals("presente", ignoreCase = true) }
+                val tardanzas = state.items.count { it.estado.equals("tarde", ignoreCase = true) }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "$presentes presentes · $tardanzas tardanzas",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
 
-        when {
+            when {
             state.isLoading -> Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -72,14 +81,18 @@ fun AsistenciasScreen(
 
             state.items.isEmpty() -> Text(
                 text = "Aún no hay registros de asistencia.",
-                color = TextMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 16.dp),
             )
 
-            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            else -> LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 16.dp),
+            ) {
                 items(state.items, key = { it.id }) { asistencia ->
                     AsistenciaRow(asistencia)
                 }
+            }
             }
         }
     }
@@ -89,8 +102,8 @@ fun AsistenciasScreen(
 private fun AsistenciaRow(asistencia: Asistencia) {
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = CardColor,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.06f)),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
@@ -102,11 +115,15 @@ private fun AsistenciaRow(asistencia: Asistencia) {
                     text = asistencia.fecha,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (asistencia.curso.isNotBlank()) {
                     Spacer(Modifier.height(2.dp))
-                    Text(asistencia.curso, fontSize = 12.sp, color = TextMuted)
+                    Text(
+                        text = asistencia.curso,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             EstadoChip(estado = asistencia.estado)
@@ -118,8 +135,13 @@ private fun AsistenciaRow(asistencia: Asistencia) {
 fun EstadoChip(estado: String, modifier: Modifier = Modifier) {
     val (label, color) = when (estado.lowercase()) {
         "presente" -> "Presente" to Green
-        "aprobada" -> "Aprobada" to Green
-        "tarde" -> "Tarde" to Amber
+        "aprobada", "aceptada" -> "Aceptada" to Green
+        "pagado" -> "Pagado" to Green
+        "completado" -> "Completado" to Green
+        "en_curso" -> "En curso" to MaterialTheme.colorScheme.primary
+        "tarde" -> "Tardanza" to Amber
+        "falta" -> "Falta" to MaterialTheme.colorScheme.error
+        "justificada" -> "Justificada" to MaterialTheme.colorScheme.primary
         "rechazada" -> "Rechazada" to MaterialTheme.colorScheme.error
         else -> "Pendiente" to Amber
     }

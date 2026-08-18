@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { config } from "../config.js";
 import { store } from "../db.js";
+import { verifyPassword } from "../passwords.js";
 import {
   expiryTimestamp,
   generateFamilyId,
@@ -45,6 +46,15 @@ const loginSchema = z.object({
 
 const refreshSchema = z.object({
   refreshToken: z.string().min(10, "Token de refresco inválido").max(200),
+});
+
+// Campos del perfil de identificación editables desde la app (Campus Virtual).
+const updateProfileSchema = z.object({
+  email: z
+    .union([z.literal(""), z.string().trim().max(120).email("Correo electrónico inválido")])
+    .optional(),
+  direccion: z.string().trim().max(200, "La dirección no puede superar 200 caracteres").optional(),
+  telefono: z.string().trim().max(30, "El teléfono no puede superar 30 caracteres").optional(),
 });
 
 function signAccessToken(user) {
@@ -99,8 +109,9 @@ export async function login(req, res) {
   const row = await store.findUserByUsername(username);
 
   // Compara siempre contra un hash (real o ficticio) para igualar tiempos.
-  const hash = row?.password_hash ?? DUMMY_HASH;
-  const valid = await bcrypt.compare(password, hash);
+  // verifyPassword soporta hashes bcrypt y credenciales legacy en texto plano
+  // (las que genera el sistema iestp para los estudiantes).
+  const valid = verifyPassword(password, row?.password_hash ?? DUMMY_HASH);
 
   if (!valid) {
     return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
@@ -163,6 +174,18 @@ export async function logout(req, res) {
   return res.status(204).end();
 }
 
-export function me(req, res) {
-  return res.json({ user: req.user });
+export async function me(req, res) {
+  const profile = await store.getProfile(req.user.id);
+  return res.json({ user: { ...req.user, ...profile } });
+}
+
+export async function updateProfile(req, res) {
+  const parsed = updateProfileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.issues[0].message });
+  }
+
+  const { email = "", direccion = "", telefono = "" } = parsed.data;
+  const profile = await store.upsertProfile(req.user.id, { email, direccion, telefono });
+  return res.json({ user: { ...req.user, ...profile } });
 }

@@ -30,7 +30,19 @@ data class UserDto(
     val id: Long,
     val username: String,
     val fullName: String = "",
+    val email: String = "",
+    val direccion: String = "",
+    val telefono: String = "",
+    val dni: String = "",
+    val programa: String = "",
     val createdAt: String? = null,
+)
+
+@Serializable
+data class UpdateProfileRequest(
+    val email: String = "",
+    val direccion: String = "",
+    val telefono: String = "",
 )
 
 @Serializable
@@ -103,4 +115,54 @@ data class Estadisticas(
 @Serializable
 data class EstadisticasResponse(
     val estadisticas: Estadisticas,
+)
+
+// ── Campus: Pagos ──
+@Serializable
+data class Pago(
+    val id: Long,
+    val concepto: String,
+    val monto: Double = 0.0,
+    val estado: String = "pendiente",
+    val fecha: String = "",
+    val ubicacion: String = "",
+)
+
+@Serializable
+data class PagosResponse(
+    val pagos: List<Pago> = emptyList(),
+    val ubicaciones: List<String> = emptyList(),
+)
+
+// ── Campus: Horarios ──
+@Serializable
+data class Horario(
+    val id: Long,
+    val dia: String,
+    val horaInicio: String = "",
+    val horaFin: String = "",
+    val curso: String = "",
+    val aula: String = "",
+    val docente: String = "",
+)
+
+@Serializable
+data class HorariosResponse(
+    val horarios: List<Horario> = emptyList(),
+)
+
+// ── Campus: Cursos ──
+@Serializable
+data class Curso(
+    val id: Long,
+    val nombre: String = "",
+    val codigo: String = "",
+    val docente: String = "",
+    val creditos: Int = 0,
+    val estado: String = "en_curso",
+)
+
+@Serializable
+data class CursosResponse(
+    val cursos: List<Curso> = emptyList(),
 )

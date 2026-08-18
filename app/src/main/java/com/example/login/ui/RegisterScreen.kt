@@ -1,7 +1,6 @@
 package com.example.login.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,10 +19,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,11 +48,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.login.ui.theme.AuthBackground
 import com.example.login.ui.theme.BrandGradient
-import com.example.login.ui.theme.Surface as CardColor
-import com.example.login.ui.theme.TextMuted
-import com.example.login.ui.theme.TextPrimary
 
 @Composable
 fun RegisterScreen(
@@ -71,7 +67,7 @@ fun RegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AuthBackground),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -80,29 +76,48 @@ fun RegisterScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(BrandGradient),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.School,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(30.dp),
+                )
+            }
+
+            Spacer(Modifier.height(18.dp))
             Text(
                 text = "Crear cuenta",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = "Únete al sistema académico",
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextMuted,
+                text = "IESTP SULLANA · CAMPUS VIRTUAL",
+                style = MaterialTheme.typography.labelMedium,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(26.dp))
+            Spacer(Modifier.height(22.dp))
 
             Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = CardColor,
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(Modifier.padding(22.dp)) {
+                Column(Modifier.padding(20.dp)) {
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
@@ -110,20 +125,20 @@ fun RegisterScreen(
                         singleLine = true,
                         leadingIcon = { Icon(Icons.Filled.Person, null) },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = fullName,
                         onValueChange = { fullName = it },
                         label = { Text("Nombre completo (opcional)") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -143,10 +158,10 @@ fun RegisterScreen(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Next,
                         ),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         value = confirm,
                         onValueChange = { confirm = it },
@@ -157,16 +172,16 @@ fun RegisterScreen(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done,
                         ),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth(),
                     )
 
                     val shownError = localError ?: error
                     if (shownError != null) {
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(12.dp))
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(
@@ -178,7 +193,7 @@ fun RegisterScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(22.dp))
+                    Spacer(Modifier.height(18.dp))
                     Button(
                         onClick = {
                             when {
@@ -194,32 +209,29 @@ fun RegisterScreen(
                             }
                         },
                         enabled = !isLoading && username.isNotBlank() && password.isNotBlank() && confirm.isNotBlank(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent,
-                        ),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
-                            .background(BrandGradient, RoundedCornerShape(14.dp)),
+                            .height(50.dp),
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onPrimary,
                             )
                         } else {
-                            Text("Registrarse", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Registrarse", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(4.dp))
                     TextButton(onClick = onBack, enabled = !isLoading, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.size(6.dp))
-                        Text("Volver al login")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Volver al login")
+                        }
                     }
                 }
             }

@@ -1,8 +1,6 @@
 package com.example.login.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,17 +10,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,11 +45,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.login.ui.theme.AuthBackground
 import com.example.login.ui.theme.BrandGradient
-import com.example.login.ui.theme.Surface as CardColor
-import com.example.login.ui.theme.TextMuted
-import com.example.login.ui.theme.TextPrimary
 
 @Composable
 fun LoginScreen(
@@ -68,7 +61,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AuthBackground),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -77,47 +70,56 @@ fun LoginScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 28.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         ) {
-            // Logo / monograma
+            // Marca institucional (único acento con degradado de identidad)
             Box(
                 modifier = Modifier
-                    .size(78.dp)
-                    .clip(RoundedCornerShape(22.dp))
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(18.dp))
                     .background(BrandGradient),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Lock,
+                    imageVector = Icons.Filled.School,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(30.dp),
                 )
             }
 
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(18.dp))
             Text(
-                text = "Sistema Académico",
-                style = MaterialTheme.typography.headlineLarge,
-                color = TextPrimary,
+                text = "CAMPUS VIRTUAL",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = "Acceso a tu cuenta de estudiante",
+                text = "IESTP SULLANA",
+                style = MaterialTheme.typography.labelMedium,
+                letterSpacing = 2.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Accede a tu cuenta de estudiante",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Spacer(Modifier.height(30.dp))
+            Spacer(Modifier.height(24.dp))
 
-            // Tarjeta del formulario
             Surface(
-                shape = RoundedCornerShape(24.dp),
-                color = CardColor,
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant,
+                ),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(Modifier.padding(22.dp)) {
+                Column(Modifier.padding(20.dp)) {
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
@@ -125,14 +127,14 @@ fun LoginScreen(
                         singleLine = true,
                         leadingIcon = { Icon(Icons.Filled.Person, null) },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                         ),
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(12.dp))
 
                     OutlinedTextField(
                         value = password,
@@ -153,7 +155,7 @@ fun LoginScreen(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done,
                         ),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                         ),
@@ -161,10 +163,10 @@ fun LoginScreen(
                     )
 
                     if (error != null) {
-                        Spacer(Modifier.height(14.dp))
+                        Spacer(Modifier.height(12.dp))
                         Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(
@@ -176,39 +178,45 @@ fun LoginScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(22.dp))
+                    Spacer(Modifier.height(18.dp))
 
-                    // Botón principal con gradiente
                     Button(
                         onClick = { onLogin(username, password) },
                         enabled = !isLoading && username.isNotBlank() && password.isNotBlank(),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent,
-                            disabledContainerColor = Color.Transparent,
-                        ),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
-                            .background(BrandGradient, RoundedCornerShape(14.dp)),
+                            .height(50.dp),
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onPrimary,
                             )
                         } else {
-                            Text("Ingresar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Ingresar", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    Spacer(Modifier.height(6.dp))
-                    TextButton(onClick = onGoRegister, enabled = !isLoading, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                    Spacer(Modifier.height(4.dp))
+                    TextButton(
+                        onClick = onGoRegister,
+                        enabled = !isLoading,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    ) {
                         Text("¿No tienes cuenta? Regístrate")
                     }
                 }
             }
+
+            Spacer(Modifier.height(18.dp))
+            Text(
+                text = "© IESTP Sullana · Campus Virtual",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            )
+            Spacer(Modifier.height(8.dp))
         }
     }
 }

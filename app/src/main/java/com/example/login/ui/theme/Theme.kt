@@ -5,58 +5,98 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// Paleta de marca (indigo → cyan)
-val Indigo = Color(0xFF6D28D9)
-val Violet = Color(0xFF8B5CF6)
-val Cyan = Color(0xFF0891B2)
+// ── Identidad de marca (institucional, usado con moderación) ──
+val Indigo = Color(0xFF4C1D95)
+val Violet = Color(0xFF7C3AED)
+val Cyan = Color(0xFF0E7490)
 val CyanLight = Color(0xFF22D3EE)
 
-// Fondos y superficies
-val Background = Color(0xFF0B1120)
-val Surface = Color(0xFF131C31)
-val SurfaceVariant = Color(0xFF1E293B)
-val TextPrimary = Color(0xFFE2E8F0)
-val TextMuted = Color(0xFF94A3B8)
-val ErrorRed = Color(0xFFF87171)
-val Amber = Color(0xFFFBBF24)
-val Green = Color(0xFF4ADE80)
+// ── Colores semánticos (adaptados al tema para mantener contraste) ──
+val Green: Color
+    @Composable get() = if (isDarkTheme()) Color(0xFF4ADE80) else Color(0xFF15803D)
+val Amber: Color
+    @Composable get() = if (isDarkTheme()) Color(0xFFFBBF24) else Color(0xFFB45309)
 
-private val DarkColors = darkColorScheme(
-    primary = CyanLight,
-    onPrimary = Color(0xFF062A33),
-    secondary = Violet,
+@Composable
+private fun isDarkTheme(): Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+// ── Esquema claro (aspecto principal, el más cercano al PDF) ──
+private val LightColors = lightColorScheme(
+    primary = Color(0xFF4C1D95),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFEDE9FE),
+    onPrimaryContainer = Color(0xFF2E1065),
+    secondary = Color(0xFF6D28D9),
     onSecondary = Color.White,
-    tertiary = Cyan,
-    background = Background,
-    onBackground = TextPrimary,
-    surface = Surface,
-    onSurface = TextPrimary,
-    surfaceVariant = SurfaceVariant,
-    onSurfaceVariant = TextMuted,
-    error = ErrorRed,
+    secondaryContainer = Color(0xFFF1EEFB),
+    onSecondaryContainer = Color(0xFF3B1D7A),
+    tertiary = Color(0xFF0E7490),
+    onTertiary = Color.White,
+    background = Color(0xFFF5F6FA),
+    onBackground = Color(0xFF1A2333),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF1A2333),
+    surfaceVariant = Color(0xFFE9ECF5),
+    onSurfaceVariant = Color(0xFF56637E),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFEFF1F8),
+    surfaceContainer = Color(0xFFEAEDF6),
+    surfaceContainerHigh = Color(0xFFE4E8F3),
+    surfaceContainerHighest = Color(0xFFDEE3F0),
+    outline = Color(0xFF7A86A3),
+    outlineVariant = Color(0xFFDFE4F0),
+    error = Color(0xFFDC2626),
+    onError = Color.White,
 )
 
-/** Tipografía consistente: encabezados con peso alto y tracking ajustado. */
+// ── Esquema oscuro (adaptación del diseño institucional, no otro diseño) ──
+private val DarkColors = darkColorScheme(
+    primary = Color(0xFFA78BFA),
+    onPrimary = Color(0xFF2E1065),
+    primaryContainer = Color(0xFF4C1D95),
+    onPrimaryContainer = Color(0xFFEDE9FE),
+    secondary = Color(0xFF8B5CF6),
+    onSecondary = Color.White,
+    background = Color(0xFF10141F),
+    onBackground = Color(0xFFE6EAF2),
+    surface = Color(0xFF161C2B),
+    onSurface = Color(0xFFE6EAF2),
+    surfaceVariant = Color(0xFF222B40),
+    onSurfaceVariant = Color(0xFF9AA6BF),
+    surfaceContainerLowest = Color(0xFF0C1019),
+    surfaceContainerLow = Color(0xFF141A28),
+    surfaceContainer = Color(0xFF171E2F),
+    surfaceContainerHigh = Color(0xFF1D2639),
+    surfaceContainerHighest = Color(0xFF232D43),
+    outline = Color(0xFF4A5674),
+    outlineVariant = Color(0xFF2B3550),
+    error = Color(0xFFF87171),
+    onError = Color(0xFF450A0A),
+)
+
+/** Tipografía legible, jerarquía clara, sin tracking negativo exagerado. */
 private val AppTypography = Typography(
     headlineLarge = TextStyle(
         fontSize = 30.sp,
         fontWeight = FontWeight.Bold,
-        letterSpacing = (-0.5).sp,
+        letterSpacing = (-0.3).sp,
         lineHeight = 36.sp,
     ),
     headlineMedium = TextStyle(
         fontSize = 24.sp,
         fontWeight = FontWeight.Bold,
-        letterSpacing = (-0.3).sp,
+        letterSpacing = (-0.2).sp,
         lineHeight = 30.sp,
     ),
     titleLarge = TextStyle(
@@ -74,8 +114,8 @@ private val AppTypography = Typography(
         lineHeight = 22.sp,
     ),
     bodyMedium = TextStyle(
-        fontSize = 13.sp,
-        lineHeight = 19.sp,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
     ),
     bodySmall = TextStyle(
         fontSize = 12.sp,
@@ -86,41 +126,37 @@ private val AppTypography = Typography(
         fontWeight = FontWeight.SemiBold,
         lineHeight = 20.sp,
     ),
+    labelMedium = TextStyle(
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        lineHeight = 16.sp,
+    ),
 )
 
-/** Radios consistentes para tarjetas, campos y diálogos. */
+/** Radios contenidos (máx. 20 dp) para un aspecto institucional sobrio. */
 private val AppShapes = Shapes(
     extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(22.dp),
-    extraLarge = RoundedCornerShape(28.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp),
+    extraLarge = RoundedCornerShape(20.dp),
 )
 
-/** Gradiente de marca para fondos, botones y acentos. */
+/** Único degradado de marca: elemento puntual de identidad (logo, avatar). */
 val BrandGradient: Brush
     @Composable get() = Brush.linearGradient(
-        colors = listOf(Violet, Indigo, Cyan),
+        colors = listOf(Violet, Indigo),
         start = Offset.Zero,
         end = Offset.Infinite,
     )
 
-/** Gradiente suave para el header del dashboard. */
-val HeroGradient: Brush
-    @Composable get() = Brush.linearGradient(
-        colors = listOf(Color(0xFF1E1B4B), Color(0xFF312E81), Color(0xFF164E63)),
-    )
-
-/** Fondo vertical oscuro usado en las pantallas de auth. */
-val AuthBackground: Brush
-    @Composable get() = Brush.verticalGradient(
-        colors = listOf(Color(0xFF0B1120), Color(0xFF111A33), Color(0xFF0B1120)),
-    )
-
 @Composable
-fun LoginTheme(content: @Composable () -> Unit) {
+fun LoginTheme(
+    darkTheme: Boolean = false,
+    content: @Composable () -> Unit,
+) {
     MaterialTheme(
-        colorScheme = DarkColors,
+        colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = AppTypography,
         shapes = AppShapes,
         content = content,

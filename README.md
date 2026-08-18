@@ -1,6 +1,6 @@
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
-  ║  APLICATIVO LOGIN — Android (Kotlin) + API REST                  ║
+  ║  CAMPUS VIRTUAL — Android (Kotlin) + API REST                   ║
   ║  App Android + backend Node.js/Express con SQLite/MySQL + Docker ║
   ╚══════════════════════════════════════════════════════════════════╝
 -->
@@ -58,7 +58,7 @@ Requisitos: **Node.js ≥ 22.5** (usa `node:sqlite` integrado, sin dependencias 
 cd server
 npm install
 npm start        # o: npm run dev (recarga automática)
-npm test         # 15 tests de integración
+npm test         # 51 tests de integración (auth, académico, campus, iestp)
 ```
 
 La API queda en `http://localhost:3000` (escucha en `0.0.0.0`).
@@ -81,11 +81,16 @@ docker compose --profile mysql up -d
 
 La imagen corre con **usuario no root** (`node`), multi-stage (`npm ci --omit=dev`) y expone `HEALTHCHECK` sobre `/api/health`.
 
-## 🏫 Compatibilidad con el sistema académico (iestp)
+## 🏫 Integración con el sistema académico (iestp)
 
-El sistema de gestión académica usa **PHP + MySQL** con la tabla `listado_usuarios` (`email`, `password`, `role_id`), donde las contraseñas son hashes **bcrypt** generados por `password_hash()` de PHP — **bcryptjs los verifica directamente**.
+Los dos proyectos comparten la **misma base de datos MySQL**:
 
-Para que la API autentique a los usuarios del instituto:
+- **`github.com/progamins/iestp`** — sistema web (PHP + MySQL) del instituto: gestiona estudiantes (importados por Excel), pagos, asistencias, justificaciones, unidades didácticas y horarios (archivos).
+- **Este repo (`aplicativo-java`)** — la app Android **Campus Virtual** consume la API Node, que puede leer/escribir **los datos reales del sistema iestp** en lugar de los demo.
+
+### Modo `DB_DRIVER=mysql` (solo autenticación)
+
+Autentica contra la tabla `listado_usuarios` (`email`, `password`, `role_id`) del sistema web. Los hashes **bcrypt** de PHP (`password_hash()`) se verifican con bcryptjs:
 
 ```bash
 # server/.env (o .env de compose)
@@ -101,7 +106,36 @@ DB_PASSWORD_COL=password
 ENABLE_REGISTER=false      # los usuarios los gestiona el sistema académico
 ```
 
-Con `ENABLE_REGISTER=false` el registro queda deshabilitado (403) y la API solo **autentica** contra la BD existente, sin modificarla (solo crea su tabla de refresh tokens).
+### Modo `DB_DRIVER=iestp` (integración completa) ← recomendado para Campus Virtual
+
+Conecta la app con las **tablas reales** del sistema iestp, de forma que ambos proyectos trabajan sobre los mismos datos:
+
+| Sección de la app | Tabla real del sistema iestp | Detalle |
+|---|---|---|
+| **Login** | `estudiantes` (`usuario`/`clave`) | El alumno entra con las credenciales que genera el sistema (ej. `rosas_edwin` / `72345678ROSAS`). Soporta texto plano (legacy) y bcrypt |
+| **Identificación** | `estudiantes` | Lee nombre, DNI, correo, teléfono, dirección, programa; editar actualiza la misma fila |
+| **Pagos** | `pagos` | Se filtran por el nombre del alumno (el sistema registra pagos por `nombres_apellidos`) con **coincidencia estricta de todos los tokens** del nombre: cada alumno ve solo sus pagos, aunque otro comparta apellidos. Ubicación = `carrera`; estado = `pagado` si tiene número de recibo |
+| **Asistencias** | `asistencias` + `estado_asistencia` | Por DNI del alumno; estados normalizados (Puntual→presente, Tardanza→tardanza, Falta→falta, Justificado→justificada) |
+| **Justificaciones** | `justificaciones` | Se crean como `Pendiente` y el panel web iestp las **acepta/rechaza**; la app refleja el estado actualizado |
+| **Cursos** | `unidades_didacticas` + `programas_estudio` | Unidades didácticas del programa del alumno |
+| **Horarios** | — | En el sistema iestp los horarios se suben como **archivos** por programa (no hay filas estructuradas); la app muestra su estado vacío |
+
+```bash
+# server/.env
+DB_DRIVER=iestp
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=...
+DB_NAME=iestp
+# (opcional) renombrar tablas si difieren del sistema iestp:
+# IESTP_ESTUDIANTES_TABLE=estudiantes · IESTP_PAGOS_TABLE=pagos ·
+# IESTP_ASISTENCIAS_TABLE=asistencias · IESTP_JUSTIFICACIONES_TABLE=justificaciones ·
+# IESTP_UNIDADES_TABLE=unidades_didacticas · IESTP_PROGRAMAS_TABLE=programas_estudio
+ENABLE_REGISTER=false      # por defecto en este modo (los estudiantes se importan por Excel)
+```
+
+La API **no modifica** las tablas del instituto salvo las operaciones de negocio del propio alumno (editar su perfil, crear su justificación) y el panel admin; solo crea su tabla propia de refresh tokens. El registro queda deshabilitado por defecto (403): los estudiantes los gestiona el sistema web.
 
 ## 📱 Compilar y ejecutar la app Android
 
@@ -120,11 +154,15 @@ Con `ENABLE_REGISTER=false` el registro queda deshabilitado (403) y la API solo 
 | `POST` | `/api/auth/login` | Iniciar sesión → `{ accessToken, refreshToken, user }` | — |
 | `POST` | `/api/auth/refresh` | Rotar refresh token → nuevo par de tokens | refresh token |
 | `POST` | `/api/auth/logout` | Revocar refresh token (204) | refresh token |
-| `GET` | `/api/auth/me` | Perfil del usuario autenticado | `Bearer <accessToken>` |
+| `GET` | `/api/auth/me` | Perfil del usuario autenticado (incluye correo, dirección, teléfono) | `Bearer <accessToken>` |
+| `PATCH` | `/api/auth/me` | Actualizar perfil de identificación `{ email, direccion, telefono }` | `Bearer` |
 | `GET` | `/api/justificaciones` | Justificaciones del usuario | `Bearer` |
 | `POST` | `/api/justificaciones` | Crear justificación `{ motivo, fecha, detalle? }` | `Bearer` |
 | `GET` | `/api/asistencias` | Historial de asistencias | `Bearer` |
 | `GET` | `/api/estadisticas` | Resumen (justificaciones, pendientes, asistencias) | `Bearer` |
+| `GET` | `/api/pagos` | Pagos del estudiante + ubicaciones disponibles | `Bearer` |
+| `GET` | `/api/horarios` | Horario semanal del estudiante | `Bearer` |
+| `GET` | `/api/cursos` | Cursos del estudiante | `Bearer` |
 | `GET` | `/api/admin/justificaciones` | **Opcional (futura web):** todas las justificaciones con datos del estudiante | `Bearer` + rol admin |
 | `PATCH` | `/api/admin/justificaciones/:id` | **Opcional (futura web):** aprobar/rechazar `{ "estado": "aprobada" | "rechazada" }` | `Bearer` + rol admin |
 
@@ -151,7 +189,7 @@ El backend conserva endpoints de administración (`/api/admin/*`, protegidos con
 |---|---|
 | **App Android** | Kotlin 2.0 · Jetpack Compose (Material 3) · Retrofit 2 · OkHttp 4 · kotlinx-serialization · ViewModel + StateFlow · Tabs de estudiante (Inicio, Justificaciones, Asistencias, Perfil) |
 | **API** | Node.js 24 · Express 4 · SQLite (`node:sqlite`) / MySQL (`mysql2`) · bcryptjs · jsonwebtoken · express-rate-limit · zod · helmet · pino · compression |
-| **Tests** | `node:test` + supertest (30 tests: auth, académico y admin) |
+| **Tests** | `node:test` + supertest (51 tests: auth, académico, campus e integración iestp) |
 | **Ops** | Docker multi-stage no-root · docker-compose (perfil MySQL) · Gradle 8.7 + AGP 8.5 (version catalog) |
 
 ## 📂 Estructura
@@ -165,13 +203,14 @@ aplicativo-java/
 │       │   ├── SessionManager.kt       # access + refresh token persistente
 │       │   ├── model/Models.kt         # DTOs (kotlinx-serialization)
 │       │   └── remote/                 # Retrofit + interceptor de refresh
-│       └── ui/                         # AuthViewModel + Login/Register/Home/Justificaciones/Asistencias/Perfil
+│       └── ui/                         # AuthViewModel + Login/Register/Menu + Identificacion/Pagos/Horarios/Cursos/Enlaces/Justificaciones/Asistencias/Cuenta/Info
+│       └── ui/components/               # CampusTopBar · MenuCard · estados · chips (diseño compartido)
 ├── server/                             # API REST
 │   ├── src/
 │   │   ├── index.js · app.js · config.js · db.js · tokens.js · logger.js
 │   │   ├── controllers/ · routes/ · middleware/   # incluye admin.routes.js
-│   │   └── stores/                     # sqlite.store.js · mysql.store.js
-│   ├── test/                           # auth, academic y admin (30 tests)
+│   │   └── stores/                     # sqlite.store.js · mysql.store.js · iestp.store.js
+│   ├── test/                           # auth, academic, campus, iestp (51 tests)
 │   ├── Dockerfile · .dockerignore
 │   └── package.json
 ├── docker-compose.yml                  # API + perfil MySQL (iestp)
@@ -184,10 +223,15 @@ aplicativo-java/
 ### ✅ Hecho
 - [x] API REST con JWT + refresh tokens rotativos y detección de reutilización
 - [x] App en Kotlin + Compose + Retrofit (MVVM) con refresh automático
+- [x] Menú principal estilo Campus Virtual (Primarios: Identificación, Pagos, Horarios, Cursos · Agregados: Justificaciones, Asistencias, Enlaces, Cuenta, Info)
+- [x] Perfil de identificación editable (correo, dirección, teléfono) con `PATCH /api/auth/me`
+- [x] Secciones Pagos (con filtro por ubicación), Horarios y Cursos con datos reales de la API
+- [x] Enlaces a las áreas web del instituto y pantalla Info (acerca de + términos)
+- [x] Modo Noche persistible (tema claro/oscuro)
 - [x] Rate limiting, validación Zod, logging pino, graceful shutdown
 - [x] Adaptador **MySQL** compatible con `listado_usuarios` de iestp
 - [x] Docker multi-stage + compose con perfil MySQL
-- [x] 15 tests de integración
+- [x] 37 tests de integración
 
 ### 🔜 Próximos pasos
 - [ ] Pantalla de perfil con `fullName` en la app

@@ -35,6 +35,10 @@ export function createMysqlStore(cfg, { adminUsernames = [] } = {}) {
   const clean = (name) => name.replace(/[^a-zA-Z0-9_]/g, "");
   const justTable = clean(cfg.justificacionesTable || "justificaciones");
   const asistTable = clean(cfg.asistenciasTable || "asistencias");
+  const profileTable = clean(cfg.profileTable || "user_profiles");
+  const pagosTable = clean(cfg.pagosTable || "pagos");
+  const horariosTable = clean(cfg.horariosTable || "horarios");
+  const cursosTable = clean(cfg.cursosTable || "cursos");
 
   return {
     async init() {
@@ -71,6 +75,54 @@ export function createMysqlStore(cfg, { adminUsernames = [] } = {}) {
           curso VARCHAR(100) NOT NULL DEFAULT '',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           INDEX idx_asist_user (user_id)
+        )
+      `);
+      await q().query(`
+        CREATE TABLE IF NOT EXISTS \`${profileTable}\` (
+          user_id BIGINT PRIMARY KEY,
+          email VARCHAR(120) NOT NULL DEFAULT '',
+          direccion VARCHAR(200) NOT NULL DEFAULT '',
+          telefono VARCHAR(30) NOT NULL DEFAULT ''
+        )
+      `);
+      await q().query(`
+        CREATE TABLE IF NOT EXISTS \`${pagosTable}\` (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          concepto VARCHAR(100) NOT NULL,
+          monto DECIMAL(10,2) NOT NULL DEFAULT 0,
+          estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+          fecha VARCHAR(10) NOT NULL,
+          ubicacion VARCHAR(100) NOT NULL DEFAULT '',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_pagos_user (user_id)
+        )
+      `);
+      await q().query(`
+        CREATE TABLE IF NOT EXISTS \`${horariosTable}\` (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          dia VARCHAR(20) NOT NULL,
+          hora_inicio VARCHAR(5) NOT NULL,
+          hora_fin VARCHAR(5) NOT NULL,
+          curso VARCHAR(100) NOT NULL,
+          aula VARCHAR(30) NOT NULL DEFAULT '',
+          docente VARCHAR(100) NOT NULL DEFAULT '',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_horarios_user (user_id)
+        )
+      `);
+      await q().query(`
+        CREATE TABLE IF NOT EXISTS \`${cursosTable}\` (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          nombre VARCHAR(100) NOT NULL,
+          codigo VARCHAR(20) NOT NULL DEFAULT '',
+          docente VARCHAR(100) NOT NULL DEFAULT '',
+          creditos INT NOT NULL DEFAULT 0,
+          estado VARCHAR(20) NOT NULL DEFAULT 'en_curso',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_cursos_user (user_id)
         )
       `);
     },
@@ -201,6 +253,59 @@ export function createMysqlStore(cfg, { adminUsernames = [] } = {}) {
     async listAsistencias(userId) {
       const [rows] = await q().query(
         `SELECT * FROM \`${asistTable}\` WHERE user_id = ? ORDER BY fecha DESC, id DESC`,
+        [userId]
+      );
+      return rows;
+    },
+
+    // ---- perfil (campus) ----
+    async getProfile(userId) {
+      const [rows] = await q().query(
+        `SELECT email, direccion, telefono FROM \`${profileTable}\` WHERE user_id = ?`,
+        [userId]
+      );
+      const r = rows[0];
+      return {
+        email: r?.email ?? "",
+        direccion: r?.direccion ?? "",
+        telefono: r?.telefono ?? "",
+      };
+    },
+
+    async upsertProfile(userId, { email, direccion, telefono }) {
+      await q().query(
+        `INSERT INTO \`${profileTable}\` (user_id, email, direccion, telefono) VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE
+           email = VALUES(email),
+           direccion = VALUES(direccion),
+           telefono = VALUES(telefono)`,
+        [userId, email, direccion, telefono]
+      );
+      return this.getProfile(userId);
+    },
+
+    // ---- pagos / horarios / cursos (campus) ----
+    async listPagos(userId) {
+      const [rows] = await q().query(
+        `SELECT * FROM \`${pagosTable}\` WHERE user_id = ? ORDER BY fecha DESC, id DESC`,
+        [userId]
+      );
+      const ubicaciones = [...new Set(rows.map((r) => r.ubicacion).filter(Boolean))];
+      return { pagos: rows, ubicaciones };
+    },
+
+    async listHorarios(userId) {
+      const [rows] = await q().query(
+        `SELECT * FROM \`${horariosTable}\` WHERE user_id = ?
+         ORDER BY FIELD(dia, 'Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'), hora_inicio`,
+        [userId]
+      );
+      return rows;
+    },
+
+    async listCursos(userId) {
+      const [rows] = await q().query(
+        `SELECT * FROM \`${cursosTable}\` WHERE user_id = ? ORDER BY id`,
         [userId]
       );
       return rows;
