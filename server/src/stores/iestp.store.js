@@ -166,6 +166,7 @@ export function createIestpStore(cfg, { adminUsernames = [] } = {}) {
     pagos: clean(cfg.pagosTable || "pagos"),
     asistencias: clean(cfg.asistenciasTable || "asistencias"),
     estadoAsistencia: clean(cfg.estadoAsistenciaTable || "estado_asistencia"),
+    horarios: clean(cfg.horariosTable || "horarios"),
     justificaciones: clean(cfg.justificacionesTable || "justificaciones"),
     unidades: clean(cfg.unidadesTable || "unidades_didacticas"),
     programas: clean(cfg.programasTable || "programas_estudio"),
@@ -394,6 +395,8 @@ export function createIestpStore(cfg, { adminUsernames = [] } = {}) {
     },
 
     // ---- asistencias (por DNI del estudiante) ----
+    // El curso proviene del horario asociado (asistencias.horario_id → horarios.nombre);
+    // si el registro no tiene horario, se deja vacío.
     async listAsistencias(userId) {
       const estudiante = await findEstudianteBy("id", userId);
       if (!estudiante?.dni) return [];
@@ -402,9 +405,10 @@ export function createIestpStore(cfg, { adminUsernames = [] } = {}) {
         `SELECT a.id,
                 a.fecha_hora AS fecha,
                 ea.estado AS estado,
-                '' AS curso
+                COALESCE(h.nombre, '') AS curso
          FROM \`${tables.asistencias}\` a
          JOIN \`${tables.estadoAsistencia}\` ea ON a.estado_id = ea.estado_id
+         LEFT JOIN \`${tables.horarios}\` h ON a.horario_id = h.horario_id
          WHERE a.dni_estudiante = ?
          ORDER BY a.fecha_hora DESC`,
         [estudiante.dni]

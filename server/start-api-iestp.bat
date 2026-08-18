@@ -6,6 +6,6 @@ set DB_HOST=127.0.0.1
 set DB_PORT=3306
 set DB_USER=root
 set DB_PASSWORD=
-set DB_NAME=iestp
+set DB_NAME=aplicativo
 set PORT=3000
 start /min "api-iestp" node src/index.js
