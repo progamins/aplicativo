@@ -1,6 +1,6 @@
 {
   "name": "aplicativo-java-api",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "API REST para la app Android de autenticación (aplicativo-java). Node.js + Express + SQLite/MySQL + JWT con refresh tokens + Docker.",
   "type": "module",
   "main": "src/index.js",

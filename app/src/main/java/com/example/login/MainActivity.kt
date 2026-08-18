@@ -4,15 +4,35 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.login.ui.AsistenciasScreen
+import com.example.login.ui.AuthUiState
 import com.example.login.ui.AuthViewModel
 import com.example.login.ui.HomeScreen
+import com.example.login.ui.JustificacionesScreen
 import com.example.login.ui.LoginScreen
+import com.example.login.ui.PerfilScreen
 import com.example.login.ui.RegisterScreen
 import com.example.login.ui.theme.LoginTheme
 
@@ -32,15 +52,25 @@ class MainActivity : ComponentActivity() {
 
 private enum class Screen { Login, Register }
 
+private enum class Tab(val label: String, val icon: ImageVector) {
+    Inicio("Inicio", Icons.Filled.Home),
+    Justificaciones("Justificaciones", Icons.Filled.Description),
+    Asistencias("Asistencias", Icons.Filled.CheckCircle),
+    Perfil("Perfil", Icons.Filled.Person),
+}
+
 @Composable
 private fun AppRoot(viewModel: AuthViewModel) {
     val state by viewModel.uiState.collectAsState()
     var screen by rememberSaveable { mutableStateOf(Screen.Login) }
+    var tab by rememberSaveable { mutableStateOf(Tab.Inicio) }
 
     when {
-        state.isLoggedIn -> HomeScreen(
-            username = state.username,
-            onLogout = viewModel::logout,
+        state.isLoggedIn -> MainScaffold(
+            viewModel = viewModel,
+            state = state,
+            tab = tab,
+            onTabChange = { tab = it },
         )
 
         screen == Screen.Register -> RegisterScreen(
@@ -56,5 +86,66 @@ private fun AppRoot(viewModel: AuthViewModel) {
             onLogin = viewModel::login,
             onGoRegister = { screen = Screen.Register },
         )
+    }
+}
+
+@Composable
+private fun MainScaffold(
+    viewModel: AuthViewModel,
+    state: AuthUiState,
+    tab: Tab,
+    onTabChange: (Tab) -> Unit,
+) {
+    val stats by viewModel.stats.collectAsState()
+    val justificaciones by viewModel.justificaciones.collectAsState()
+    val asistencias by viewModel.asistencias.collectAsState()
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        bottomBar = {
+            NavigationBar {
+                Tab.entries.forEach { item ->
+                    NavigationBarItem(
+                        selected = tab == item,
+                        onClick = { onTabChange(item) },
+                        icon = { Icon(item.icon, null) },
+                        label = { Text(item.label) },
+                    )
+                }
+            }
+        },
+    ) { padding ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) {
+            when (tab) {
+                Tab.Inicio -> HomeScreen(
+                    username = state.username,
+                    fullName = state.fullName,
+                    stats = stats,
+                    onOpenJustificaciones = { onTabChange(Tab.Justificaciones) },
+                    onOpenAsistencias = { onTabChange(Tab.Asistencias) },
+                )
+
+                Tab.Justificaciones -> JustificacionesScreen(
+                    state = justificaciones,
+                    onLoad = viewModel::loadJustificaciones,
+                    onCreate = viewModel::createJustificacion,
+                )
+
+                Tab.Asistencias -> AsistenciasScreen(
+                    state = asistencias,
+                    onLoad = viewModel::loadAsistencias,
+                )
+
+                Tab.Perfil -> PerfilScreen(
+                    username = state.username,
+                    fullName = state.fullName,
+                    onLogout = viewModel::logout,
+                )
+            }
+        }
     }
 }

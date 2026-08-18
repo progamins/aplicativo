@@ -8,6 +8,7 @@ import pinoHttp from "pino-http";
 
 import { config } from "./config.js";
 import { logger } from "./logger.js";
+import academicRoutes from "./routes/academic.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 
 export function createApp() {
@@ -32,13 +33,14 @@ export function createApp() {
     res.json({
       status: "ok",
       service: "aplicativo-java-api",
-      version: "2.1.0",
+      version: "2.2.0",
       db: config.dbDriver,
       time: new Date().toISOString(),
     });
   });
 
   app.use("/api/auth", authRoutes);
+  app.use("/api", academicRoutes);
 
   app.use((req, res) => {
     res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.path}` });

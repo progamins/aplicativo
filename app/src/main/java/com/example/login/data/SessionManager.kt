@@ -3,7 +3,7 @@ package com.example.login.data
 import android.content.Context
 import android.content.SharedPreferences
 
-/** Guarda la sesión (access token, refresh token y usuario) localmente. */
+/** Guarda la sesión (access token, refresh token y datos del usuario) localmente. */
 object SessionManager {
     private lateinit var prefs: SharedPreferences
 
@@ -29,6 +29,12 @@ object SessionManager {
             prefs.edit().putString(KEY_USERNAME, value).apply()
         }
 
+    var fullName: String?
+        get() = prefs.getString(KEY_FULLNAME, null)
+        set(value) {
+            prefs.edit().putString(KEY_FULLNAME, value).apply()
+        }
+
     fun clear() {
         prefs.edit().clear().apply()
     }
@@ -36,4 +42,5 @@ object SessionManager {
     private const val KEY_ACCESS = "access_token"
     private const val KEY_REFRESH = "refresh_token"
     private const val KEY_USERNAME = "username"
+    private const val KEY_FULLNAME = "full_name"
 }

@@ -33,6 +33,8 @@ export const config = {
     passwordColumn: process.env.DB_PASSWORD_COL || "password",
     fullNameColumn: process.env.DB_FULLNAME_COL || null,
     refreshTable: process.env.DB_REFRESH_TABLE || "refresh_tokens",
+    justificacionesTable: process.env.DB_JUSTIFICACIONES_TABLE || "justificaciones",
+    asistenciasTable: process.env.DB_ASISTENCIAS_TABLE || "asistencias",
   },
 
   enableRegister: bool(process.env.ENABLE_REGISTER, true),

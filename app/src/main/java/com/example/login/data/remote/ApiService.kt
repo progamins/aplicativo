@@ -1,6 +1,11 @@
 package com.example.login.data.remote
 
+import com.example.login.data.model.AsistenciasResponse
 import com.example.login.data.model.AuthResponse
+import com.example.login.data.model.CreateJustificacionRequest
+import com.example.login.data.model.CreateJustificacionResponse
+import com.example.login.data.model.EstadisticasResponse
+import com.example.login.data.model.JustificacionesResponse
 import com.example.login.data.model.LoginRequest
 import com.example.login.data.model.LogoutRequest
 import com.example.login.data.model.MeResponse
@@ -12,6 +17,7 @@ import retrofit2.http.POST
 
 interface ApiService {
 
+    // ── Auth ──
     @POST("api/auth/register")
     suspend fun register(@Body body: RegisterRequest): AuthResponse
 
@@ -23,6 +29,19 @@ interface ApiService {
 
     @POST("api/auth/logout")
     suspend fun logout(@Body body: LogoutRequest)
+
+    // ── Académico ──
+    @GET("api/justificaciones")
+    suspend fun justificaciones(): JustificacionesResponse
+
+    @POST("api/justificaciones")
+    suspend fun createJustificacion(@Body body: CreateJustificacionRequest): CreateJustificacionResponse
+
+    @GET("api/asistencias")
+    suspend fun asistencias(): AsistenciasResponse
+
+    @GET("api/estadisticas")
+    suspend fun estadisticas(): EstadisticasResponse
 }
 
 /** Variante síncrona (Call) solo para renovar el token desde el interceptor. */

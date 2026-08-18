@@ -49,3 +49,58 @@ data class MeResponse(
 data class ApiError(
     val error: String = "",
 )
+
+// ── Justificaciones ──
+@Serializable
+data class Justificacion(
+    val id: Long,
+    val motivo: String,
+    val detalle: String = "",
+    val fecha: String,
+    val estado: String = "pendiente",
+)
+
+@Serializable
+data class JustificacionesResponse(
+    val justificaciones: List<Justificacion>,
+)
+
+@Serializable
+data class CreateJustificacionRequest(
+    val motivo: String,
+    val fecha: String,
+    val detalle: String = "",
+)
+
+@Serializable
+data class CreateJustificacionResponse(
+    val justificacion: Justificacion,
+)
+
+// ── Asistencias ──
+@Serializable
+data class Asistencia(
+    val id: Long,
+    val fecha: String,
+    val estado: String,
+    val curso: String = "",
+)
+
+@Serializable
+data class AsistenciasResponse(
+    val asistencias: List<Asistencia>,
+)
+
+// ── Estadísticas ──
+@Serializable
+data class Estadisticas(
+    val justificaciones: Int = 0,
+    val pendientes: Int = 0,
+    val totalAsistencias: Int = 0,
+    val presentes: Int = 0,
+)
+
+@Serializable
+data class EstadisticasResponse(
+    val estadisticas: Estadisticas,
+)

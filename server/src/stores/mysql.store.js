@@ -5,6 +5,7 @@ import mysql from "mysql2/promise";
  * por ejemplo `listado_usuarios` del sistema académico (iestp):
  *   DB_TABLE=listado_usuarios  DB_USERNAME_COL=email  DB_PASSWORD_COL=password
  * Los hashes de PHP `password_hash()` (bcrypt) son verificables con bcryptjs.
+ * Las tablas de justificaciones/asistencias son propias de la app.
  */
 export function createMysqlStore(cfg) {
   if (!cfg.database) {
@@ -29,10 +30,12 @@ export function createMysqlStore(cfg) {
   };
 
   const refreshTable = cfg.refreshTable.replace(/[^a-zA-Z0-9_]/g, "");
+  const clean = (name) => name.replace(/[^a-zA-Z0-9_]/g, "");
+  const justTable = clean(cfg.justificacionesTable || "justificaciones");
+  const asistTable = clean(cfg.asistenciasTable || "asistencias");
 
   return {
     async init() {
-      // Tabla de refresh tokens (se crea si no existe; no toca el resto de la BD).
       await q().query(`
         CREATE TABLE IF NOT EXISTS \`${refreshTable}\` (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -43,6 +46,29 @@ export function createMysqlStore(cfg) {
           revoked_at BIGINT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           INDEX idx_refresh_user (user_id)
+        )
+      `);
+      await q().query(`
+        CREATE TABLE IF NOT EXISTS \`${justTable}\` (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          motivo VARCHAR(100) NOT NULL,
+          detalle TEXT NOT NULL,
+          fecha VARCHAR(10) NOT NULL,
+          estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_just_user (user_id)
+        )
+      `);
+      await q().query(`
+        CREATE TABLE IF NOT EXISTS \`${asistTable}\` (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id BIGINT NOT NULL,
+          fecha VARCHAR(10) NOT NULL,
+          estado VARCHAR(20) NOT NULL,
+          curso VARCHAR(100) NOT NULL DEFAULT '',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_asist_user (user_id)
         )
       `);
     },
@@ -117,6 +143,35 @@ export function createMysqlStore(cfg) {
         Date.now(),
         familyId,
       ]);
+    },
+
+    // ---- justificaciones ----
+    async listJustificaciones(userId) {
+      const [rows] = await q().query(
+        `SELECT * FROM \`${justTable}\` WHERE user_id = ? ORDER BY fecha DESC, id DESC`,
+        [userId]
+      );
+      return rows;
+    },
+
+    async createJustificacion({ userId, motivo, fecha, detalle }) {
+      const [result] = await q().query(
+        `INSERT INTO \`${justTable}\` (user_id, motivo, fecha, detalle) VALUES (?, ?, ?, ?)`,
+        [userId, motivo, fecha, detalle]
+      );
+      const [rows] = await q().query(`SELECT * FROM \`${justTable}\` WHERE id = ?`, [
+        result.insertId,
+      ]);
+      return rows[0] ?? null;
+    },
+
+    // ---- asistencias ----
+    async listAsistencias(userId) {
+      const [rows] = await q().query(
+        `SELECT * FROM \`${asistTable}\` WHERE user_id = ? ORDER BY fecha DESC, id DESC`,
+        [userId]
+      );
+      return rows;
     },
   };
 }
