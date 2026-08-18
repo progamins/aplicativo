@@ -16,16 +16,32 @@ data class RegisterRequest(
 )
 
 @Serializable
+data class RefreshRequest(
+    val refreshToken: String,
+)
+
+@Serializable
+data class LogoutRequest(
+    val refreshToken: String,
+)
+
+@Serializable
 data class UserDto(
     val id: Long,
     val username: String,
     val fullName: String = "",
-    val createdAt: String = "",
+    val createdAt: String? = null,
 )
 
 @Serializable
 data class AuthResponse(
-    val token: String,
+    val accessToken: String,
+    val refreshToken: String,
+    val user: UserDto,
+)
+
+@Serializable
+data class MeResponse(
     val user: UserDto,
 )
 

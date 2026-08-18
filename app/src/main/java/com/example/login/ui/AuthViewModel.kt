@@ -6,6 +6,7 @@ import com.example.login.data.SessionManager
 import com.example.login.data.model.ApiError
 import com.example.login.data.model.AuthResponse
 import com.example.login.data.model.LoginRequest
+import com.example.login.data.model.LogoutRequest
 import com.example.login.data.model.RegisterRequest
 import com.example.login.data.remote.ApiClient
 import java.io.IOException
@@ -25,11 +26,31 @@ class AuthViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         AuthUiState(
-            isLoggedIn = !SessionManager.token.isNullOrBlank(),
+            // Si hay sesión guardada, se valida contra la API al iniciar.
+            isLoading = !SessionManager.accessToken.isNullOrBlank(),
+            isLoggedIn = false,
             username = SessionManager.username.orEmpty(),
         )
     )
     val uiState: StateFlow<AuthUiState> = _uiState
+
+    init {
+        if (!SessionManager.accessToken.isNullOrBlank()) validateSession()
+    }
+
+    /** Valida la sesión guardada contra /api/auth/me (renueva token si hace falta). */
+    private fun validateSession() {
+        viewModelScope.launch {
+            try {
+                val me = ApiClient.api.me()
+                SessionManager.username = me.user.username
+                _uiState.value = AuthUiState(isLoggedIn = true, username = me.user.username)
+            } catch (_: Exception) {
+                SessionManager.clear()
+                _uiState.value = AuthUiState()
+            }
+        }
+    }
 
     fun login(username: String, password: String) {
         authCall {
@@ -50,8 +71,19 @@ class AuthViewModel : ViewModel() {
     }
 
     fun logout() {
-        SessionManager.clear()
-        _uiState.value = AuthUiState()
+        viewModelScope.launch {
+            val refreshToken = SessionManager.refreshToken
+            SessionManager.clear()
+            _uiState.value = AuthUiState()
+            if (refreshToken != null) {
+                // Revocación del refresh token en el servidor (best-effort).
+                try {
+                    ApiClient.api.logout(LogoutRequest(refreshToken))
+                } catch (_: Exception) {
+                    // Sin conexión: la sesión local ya se limpió.
+                }
+            }
+        }
     }
 
     private fun authCall(block: suspend () -> AuthResponse) {
@@ -59,7 +91,8 @@ class AuthViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val response = block()
-                SessionManager.token = response.token
+                SessionManager.accessToken = response.accessToken
+                SessionManager.refreshToken = response.refreshToken
                 SessionManager.username = response.user.username
                 _uiState.value = AuthUiState(isLoggedIn = true, username = response.user.username)
             } catch (e: Exception) {

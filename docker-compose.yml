@@ -1,0 +1,68 @@
+# API del proyecto aplicativo-java
+#
+# Uso básico (SQLite):
+#   cp .env.example .env   # edita JWT_SECRET
+#   docker compose up -d
+#
+# Con MySQL (compatibilidad con el sistema académico iestp):
+#   docker compose --profile mysql up -d
+#   y ajusta las variables DB_* en .env (DB_DRIVER=mysql, DB_HOST=mysql…)
+
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: aplicativo-java-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env (ver .env.example)}
+      DB_DRIVER: ${DB_DRIVER:-sqlite}
+      DB_PATH: /app/data/app.db
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      # ── Modo MySQL (compatibilidad con el sistema académico) ──
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      DB_NAME: ${DB_NAME:-}
+      DB_TABLE: ${DB_TABLE:-listado_usuarios}
+      DB_USERNAME_COL: ${DB_USERNAME_COL:-email}
+      DB_PASSWORD_COL: ${DB_PASSWORD_COL:-password}
+      DB_FULLNAME_COL: ${DB_FULLNAME_COL:-}
+      ENABLE_REGISTER: ${ENABLE_REGISTER:-true}
+    volumes:
+      - api-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Perfil opcional: MySQL 8 para integrarse con iestp ──
+  # docker compose --profile mysql up -d   (importa después el esquema de iestp)
+  mysql:
+    image: mysql:8.4
+    profiles: ["mysql"]
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-iestp}
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  api-data:
+  mysql-data:

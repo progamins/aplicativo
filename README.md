@@ -1,7 +1,7 @@
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
   ║  APLICATIVO LOGIN — Android (Kotlin) + API REST                  ║
-  ║  App Android moderna con backend Node.js + Express + SQLite      ║
+  ║  App Android + backend Node.js/Express con SQLite/MySQL + Docker ║
   ╚══════════════════════════════════════════════════════════════════╝
 -->
 
@@ -13,16 +13,18 @@
   <h1>📱 Aplicativo Login · Android + API REST</h1>
   <p>
     Aplicación Android en <b>Kotlin + Jetpack Compose</b> que autentica usuarios contra una
-    <b>API REST propia</b> (Node.js + Express + SQLite) con <b>JWT</b>.
+    <b>API REST propia</b> (Node.js + Express) con <b>JWT + refresh tokens</b>,
+    lista para <b>Docker</b> y compatible con la base de datos del sistema académico.
   </p>
   <p>
     <img src="https://img.shields.io/badge/Android-SDK_34-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android SDK 34"/>
     <img src="https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin 2.0"/>
     <img src="https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose"/>
     <img src="https://img.shields.io/badge/Node.js-24-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js 24"/>
-    <img src="https://img.shields.io/badge/Express-4-000000?style=flat-square&logo=express&logoColor=white" alt="Express"/>
-    <img src="https://img.shields.io/badge/Base_de_datos-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite"/>
-    <img src="https://img.shields.io/badge/Auth-JWT_%2B_bcrypt-F59E0B?style=flat-square" alt="JWT + bcrypt"/>
+    <img src="https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker"/>
+    <img src="https://img.shields.io/badge/BD-SQLite_%7C_MySQL-003B57?style=flat-square" alt="SQLite / MySQL"/>
+    <img src="https://img.shields.io/badge/Auth-JWT_%2B_refresh_tokens-F59E0B?style=flat-square" alt="JWT + refresh tokens"/>
+    <img src="https://img.shields.io/badge/Tests-15_pasando-22C55E?style=flat-square" alt="Tests"/>
   </p>
 </div>
 
@@ -30,21 +32,22 @@
 
 ## ✨ ¿Qué es?
 
-Sistema de autenticación completo de extremo a extremo con **arquitectura moderna**:
+Sistema de autenticación completo de extremo a extremo con **arquitectura moderna** y **seguridad profesional**:
 
-- **App Android** escrita en **Kotlin** con **Jetpack Compose (Material 3)**, arquitectura **MVVM** (ViewModel + StateFlow), networking con **Retrofit + OkHttp** y sesión persistente con JWT.
-- **API REST** en **Node.js + Express + SQLite** que reemplaza la antigua conexión JDBC directa a SQL Server: contraseñas con **bcrypt**, sesiones con **JWT**, **rate limiting**, validación con **Zod** y consultas **parametrizadas**.
-
-> 🆕 **v2.0**: el proyecto pasó de una app Android con JDBC directo (credenciales hardcodeadas e inyección SQL) a una arquitectura cliente-servidor segura y moderna.
+- **App Android** en **Kotlin + Jetpack Compose (Material 3)**, arquitectura **MVVM** (ViewModel + StateFlow), networking con **Retrofit + OkHttp** con **renovación automática del token** (refresh en 401).
+- **API REST** en **Node.js + Express** con **JWT de corta duración + refresh tokens rotativos**, contraseñas con **bcrypt**, **rate limiting**, validación **Zod**, logging estructurado con **pino** y consultas **parametrizadas**.
+- **Docker listo**: imagen multi-stage con usuario no root, `docker-compose` con healthcheck y perfil MySQL opcional.
+- **Compatible con el sistema académico (iestp)**: la API puede autenticar contra la tabla `listado_usuarios` de MySQL (los hashes bcrypt de PHP se verifican con bcryptjs).
 
 ## 🏗️ Arquitectura
 
 ```text
-┌────────────────────────┐        HTTP / JSON         ┌─────────────────────────┐
-│   App Android          │  ────────────────────────► │   API REST (server/)    │
-│   Kotlin · Compose     │                            │   Node.js · Express     │
-│   Retrofit · MVVM      │  ◄──────────────────────── │   SQLite · JWT · bcrypt │
-└────────────────────────┘      token JWT (Bearer)    └─────────────────────────┘
+┌────────────────────────┐        HTTP / JSON         ┌────────────────────────────┐
+│   App Android          │  ────────────────────────► │   API REST (server/)       │
+│   Kotlin · Compose     │   access token (Bearer)    │   Node.js · Express        │
+│   Retrofit · MVVM      │  ◄──────────────────────── │   SQLite / MySQL · pino    │
+│   refresh automático   │   refresh tokens rotativos │   JWT · bcrypt · zod       │
+└────────────────────────┘                            └────────────────────────────┘
 ```
 
 ## 🚀 Correr la API en local
@@ -55,115 +58,130 @@ Requisitos: **Node.js ≥ 22.5** (usa `node:sqlite` integrado, sin dependencias 
 cd server
 npm install
 npm start        # o: npm run dev (recarga automática)
+npm test         # 15 tests de integración
 ```
 
-La API queda en `http://localhost:3000` (escucha en `0.0.0.0`, accesible desde tu teléfono en la misma red).
+La API queda en `http://localhost:3000` (escucha en `0.0.0.0`).
 
-Prueba rápida:
+## 🐳 Docker
 
 ```bash
-# Registro
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"edwin","password":"secreto123","fullName":"Edwin"}'
-
-# Login (devuelve el token JWT)
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"edwin","password":"secreto123"}'
+cd aplicativo-java          # raíz del repo
+cp .env.example .env        # edita JWT_SECRET
+docker compose up -d        # API en http://localhost:3000
+docker compose ps           # ver estado (healthcheck incluido)
 ```
 
-Configuración por variables de entorno (copia `server/.env.example` → `server/.env`):
+Con **MySQL** (perfil opcional, para el sistema académico):
 
-| Variable | Descripción |
-|---|---|
-| `PORT` | Puerto (por defecto `3000`) |
-| `HOST` | Interfaz de escucha (por defecto `0.0.0.0`) |
-| `JWT_SECRET` | Secreto para firmar tokens — **cámbialo en producción** |
-| `JWT_EXPIRES_IN` | Vigencia del token (por defecto `24h`) |
-| `DB_PATH` | Ruta del archivo SQLite (por defecto `./data/app.db`) |
-| `BCRYPT_ROUNDS` | Coste del hash (por defecto `10`) |
+```bash
+docker compose --profile mysql up -d
+# ajusta DB_DRIVER=mysql y DB_* en .env, e importa el esquema de iestp
+```
+
+La imagen corre con **usuario no root** (`node`), multi-stage (`npm ci --omit=dev`) y expone `HEALTHCHECK` sobre `/api/health`.
+
+## 🏫 Compatibilidad con el sistema académico (iestp)
+
+El sistema de gestión académica usa **PHP + MySQL** con la tabla `listado_usuarios` (`email`, `password`, `role_id`), donde las contraseñas son hashes **bcrypt** generados por `password_hash()` de PHP — **bcryptjs los verifica directamente**.
+
+Para que la API autentique a los usuarios del instituto:
+
+```bash
+# server/.env (o .env de compose)
+DB_DRIVER=mysql
+DB_HOST=localhost          # o "mysql" si usas compose
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=...
+DB_NAME=iestp
+DB_TABLE=listado_usuarios
+DB_USERNAME_COL=email
+DB_PASSWORD_COL=password
+ENABLE_REGISTER=false      # los usuarios los gestiona el sistema académico
+```
+
+Con `ENABLE_REGISTER=false` el registro queda deshabilitado (403) y la API solo **autentica** contra la BD existente, sin modificarla (solo crea su tabla de refresh tokens).
 
 ## 📱 Compilar y ejecutar la app Android
 
-1. Abre el proyecto en **Android Studio** (Giraffe o superior; usa el wrapper incluido).
+1. Abre el proyecto en **Android Studio**.
 2. Con la API corriendo, ejecuta la app:
-   - **Emulador**: la URL `http://10.0.2.2:3000/` ya apunta al `localhost` de tu PC (configurada por defecto en `app/build.gradle.kts`).
-   - **Dispositivo físico**: cambia `API_BASE_URL` en `app/build.gradle.kts` por la IP local de tu PC en la misma red, ej. `http://192.168.1.10:3000/`.
-3. Regístrate y entra. 🎉
+   - **Emulador**: `http://10.0.2.2:3000/` (ya configurada por defecto en `app/build.gradle.kts`).
+   - **Dispositivo físico**: cambia `API_BASE_URL` por la IP local de tu PC, ej. `http://192.168.1.10:3000/`.
+3. Regístrate y entra. La app **renueva el token automáticamente** y valida la sesión al abrir.
 
 ## 📚 Endpoints de la API
 
 | Método | Ruta | Descripción | Auth |
 |---|---|---|---|
-| `GET` | `/api/health` | Estado del servicio | — |
-| `POST` | `/api/auth/register` | Crear cuenta → `{ token, user }` | — |
-| `POST` | `/api/auth/login` | Iniciar sesión → `{ token, user }` | — |
-| `GET` | `/api/auth/me` | Perfil del usuario autenticado | `Bearer <token>` |
+| `GET` | `/api/health` | Estado del servicio (versión + driver BD) | — |
+| `POST` | `/api/auth/register` | Crear cuenta → `{ accessToken, refreshToken, user }` | — |
+| `POST` | `/api/auth/login` | Iniciar sesión → `{ accessToken, refreshToken, user }` | — |
+| `POST` | `/api/auth/refresh` | Rotar refresh token → nuevo par de tokens | refresh token |
+| `POST` | `/api/auth/logout` | Revocar refresh token (204) | refresh token |
+| `GET` | `/api/auth/me` | Perfil del usuario autenticado | `Bearer <accessToken>` |
 
 ## 🔐 Seguridad
 
-- **bcrypt** para hashear contraseñas (nunca se guardan en texto plano).
-- **JWT** firmado con secreto de entorno, expiración configurable.
-- **Rate limiting** en login y registro (anti fuerza bruta).
-- **Consultas parametrizadas** (`node:sqlite` prepared statements) — sin inyección SQL.
-- **Validación de entrada** con Zod.
-- **Helmet + CORS** en Express.
-- El token JWT viaja en el header `Authorization: Bearer …`.
+- **Refresh tokens rotativos** con detección de **reutilización** (si un token ya rotado se usa de nuevo, se revoca toda la familia por posible robo). Guardados **hasheados (SHA-256)** en BD.
+- **Access token de corta duración** (`15m` por defecto), firmado con `issuer`/`audience`, secreto por entorno con **abortado en producción** si no está definido.
+- **bcrypt** para contraseñas + **igualación de tiempos** contra un hash ficticio (anti enumeración de usuarios).
+- **Rate limiting**: 5 intentos de login por usuario+IP cada 15 min.
+- **Consultas parametrizadas** (prepared statements) — sin inyección SQL.
+- **Helmet** (CSP, HSTS, X-Content-Type-Options…) + **CORS configurable** + límite de cuerpo de 32 KB.
+- **Logging estructurado con pino** y redacción de cabeceras sensibles (Authorization).
+- **Graceful shutdown** (SIGTERM/SIGINT cierra servidor y BD).
 
 ## 🛠️ Tech Stack
 
 | Capa | Tecnologías |
 |---|---|
 | **App Android** | Kotlin 2.0 · Jetpack Compose (Material 3) · Retrofit 2 · OkHttp 4 · kotlinx-serialization · ViewModel + StateFlow |
-| **API** | Node.js 24 · Express 4 · node:sqlite (SQLite) · bcryptjs · jsonwebtoken · express-rate-limit · zod · helmet |
-| **Build** | Gradle 8.7 (Kotlin DSL) · AGP 8.5 · version catalog (`libs.versions.toml`) |
+| **API** | Node.js 24 · Express 4 · SQLite (`node:sqlite`) / MySQL (`mysql2`) · bcryptjs · jsonwebtoken · express-rate-limit · zod · helmet · pino · compression |
+| **Tests** | `node:test` + supertest (15 tests) |
+| **Ops** | Docker multi-stage no-root · docker-compose (perfil MySQL) · Gradle 8.7 + AGP 8.5 (version catalog) |
 
 ## 📂 Estructura
 
 ```text
 aplicativo-java/
 ├── app/                                # App Android (Kotlin + Compose)
-│   └── src/main/
-│       ├── AndroidManifest.xml
-│       └── java/com/example/login/
-│           ├── MainActivity.kt         # Navegación login/registro/home
-│           ├── App.kt                  # Application (inicializa sesión)
-│           ├── data/
-│           │   ├── SessionManager.kt   # Token JWT persistente
-│           │   ├── model/Models.kt     # DTOs (kotlinx-serialization)
-│           │   └── remote/             # Retrofit: ApiService + ApiClient
-│           └── ui/
-│               ├── AuthViewModel.kt    # MVVM: StateFlow + corrutinas
-│               ├── LoginScreen.kt · RegisterScreen.kt · HomeScreen.kt
-│               └── theme/Theme.kt      # Material 3 dark
-├── server/                             # API REST (Node.js + Express)
+│   └── src/main/java/com/example/login/
+│       ├── MainActivity.kt · App.kt
+│       ├── data/
+│       │   ├── SessionManager.kt       # access + refresh token persistente
+│       │   ├── model/Models.kt         # DTOs (kotlinx-serialization)
+│       │   └── remote/                 # Retrofit + interceptor de refresh
+│       └── ui/                         # AuthViewModel + Login/Register/Home
+├── server/                             # API REST
 │   ├── src/
-│   │   ├── index.js · app.js · config.js · db.js
-│   │   ├── routes/auth.routes.js
-│   │   ├── controllers/auth.controller.js
-│   │   └── middleware/auth.js          # Verificación JWT
-│   ├── .env.example                    # Plantilla de configuración
+│   │   ├── index.js · app.js · config.js · db.js · tokens.js · logger.js
+│   │   ├── controllers/ · routes/ · middleware/
+│   │   └── stores/                     # sqlite.store.js · mysql.store.js
+│   ├── test/auth.test.js               # 15 tests de integración
+│   ├── Dockerfile · .dockerignore
 │   └── package.json
-├── build.gradle.kts · settings.gradle.kts
+├── docker-compose.yml                  # API + perfil MySQL (iestp)
+├── .env.example                        # variables para compose
 └── gradle/libs.versions.toml
 ```
 
 ## 🗺️ Roadmap
 
-### ✅ v2.0 — Hecho
-- [x] API REST propia (Express + SQLite + JWT + bcrypt + rate limiting)
-- [x] App migrada de Java + JDBC directo a **Kotlin + Compose + Retrofit**
-- [x] Arquitectura MVVM (ViewModel + StateFlow + corrutinas)
-- [x] Sesión persistente con JWT
-- [x] Validación de entrada y consultas parametrizadas
+### ✅ Hecho
+- [x] API REST con JWT + refresh tokens rotativos y detección de reutilización
+- [x] App en Kotlin + Compose + Retrofit (MVVM) con refresh automático
+- [x] Rate limiting, validación Zod, logging pino, graceful shutdown
+- [x] Adaptador **MySQL** compatible con `listado_usuarios` de iestp
+- [x] Docker multi-stage + compose con perfil MySQL
+- [x] 15 tests de integración
 
 ### 🔜 Próximos pasos
-- [ ] `GET /api/auth/me` en la app (validar sesión al iniciar)
-- [ ] Pantalla de perfil con `fullName`
-- [ ] Tests automatizados (API y app)
-- [ ] Migración de SQLite a MySQL/SQL Server según entorno
-- [ ] CI con GitHub Actions
+- [ ] Pantalla de perfil con `fullName` en la app
+- [ ] Tests de la app Android (JVM + instrumentados)
+- [ ] CI con GitHub Actions (test + build + docker)
+- [ ] Vincular roles de iestp (`role_id`) en la respuesta de login
 
 ---
 

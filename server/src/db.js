@@ -1,51 +1,18 @@
-import { mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { DatabaseSync } from "node:sqlite";
-
 import { config } from "./config.js";
+import { createMysqlStore } from "./stores/mysql.store.js";
+import { createSqliteStore } from "./stores/sqlite.store.js";
 
-mkdirSync(dirname(resolve(config.dbPath)), { recursive: true });
+/**
+ * Almacén activo (interfaz única):
+ *   findUserByUsername / findUserById / createUser / toPublicUser
+ *   saveRefreshToken / findRefreshToken / revokeRefreshToken / revokeRefreshTokenFamily / close
+ * La elección sqlite|mysql se hace por DB_DRIVER.
+ */
+export const store =
+  config.dbDriver === "mysql"
+    ? createMysqlStore(config.mysql)
+    : createSqliteStore(config.dbPath);
 
-export const db = new DatabaseSync(resolve(config.dbPath));
-
-db.exec(`
-  PRAGMA journal_mode = WAL;
-
-  CREATE TABLE IF NOT EXISTS users (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    username      TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    full_name     TEXT NOT NULL DEFAULT '',
-    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-`);
-
-export function findUserByUsername(username) {
-  return db.prepare("SELECT * FROM users WHERE username = ?").get(username) ?? null;
-}
-
-export function findUserById(id) {
-  return (
-    db
-      .prepare("SELECT id, username, full_name, created_at FROM users WHERE id = ?")
-      .get(id) ?? null
-  );
-}
-
-export function createUser({ username, passwordHash, fullName }) {
-  const result = db
-    .prepare("INSERT INTO users (username, password_hash, full_name) VALUES (?, ?, ?)")
-    .run(username, passwordHash, fullName);
-  return findUserById(result.lastInsertRowid);
-}
-
-/** Convierte una fila de la BD al DTO público (sin hash ni campos internos). */
-export function toPublicUser(user) {
-  if (!user) return null;
-  return {
-    id: user.id,
-    username: user.username,
-    fullName: user.full_name,
-    createdAt: user.created_at,
-  };
+export async function initStore() {
+  if (typeof store.init === "function") await store.init();
 }
