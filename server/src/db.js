@@ -10,8 +10,8 @@ import { createSqliteStore } from "./stores/sqlite.store.js";
  */
 export const store =
   config.dbDriver === "mysql"
-    ? createMysqlStore(config.mysql)
-    : createSqliteStore(config.dbPath);
+    ? createMysqlStore(config.mysql, { adminUsernames: config.adminUsernames })
+    : createSqliteStore(config.dbPath, { adminUsernames: config.adminUsernames });
 
 export async function initStore() {
   if (typeof store.init === "function") await store.init();

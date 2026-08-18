@@ -42,6 +42,7 @@ import com.example.login.ui.theme.TextPrimary
 fun PerfilScreen(
     username: String,
     fullName: String,
+    isAdmin: Boolean = false,
     onLogout: () -> Unit,
 ) {
     val displayName = fullName.ifBlank { username }
@@ -94,6 +95,7 @@ fun PerfilScreen(
             Column(Modifier.padding(18.dp)) {
                 ProfileRow("Nombre", fullName.ifBlank { "—" })
                 ProfileRow("Usuario", username)
+                ProfileRow("Rol", if (isAdmin) "Administrador" else "Estudiante")
                 ProfileRow("Sistema", "Gestión académica")
             }
         }

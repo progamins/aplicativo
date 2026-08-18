@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Home
@@ -19,6 +20,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.login.ui.AdminScreen
 import com.example.login.ui.AsistenciasScreen
 import com.example.login.ui.AuthUiState
 import com.example.login.ui.AuthViewModel
@@ -56,6 +59,7 @@ private enum class Tab(val label: String, val icon: ImageVector) {
     Inicio("Inicio", Icons.Filled.Home),
     Justificaciones("Justificaciones", Icons.Filled.Description),
     Asistencias("Asistencias", Icons.Filled.CheckCircle),
+    Admin("Admin", Icons.Filled.AdminPanelSettings),
     Perfil("Perfil", Icons.Filled.Person),
 }
 
@@ -66,12 +70,18 @@ private fun AppRoot(viewModel: AuthViewModel) {
     var tab by rememberSaveable { mutableStateOf(Tab.Inicio) }
 
     when {
-        state.isLoggedIn -> MainScaffold(
-            viewModel = viewModel,
-            state = state,
-            tab = tab,
-            onTabChange = { tab = it },
-        )
+        state.isLoggedIn -> {
+            // Si la sesión deja de ser admin, nunca quedarse en el tab Admin.
+            LaunchedEffect(state.isAdmin) {
+                if (tab == Tab.Admin && !state.isAdmin) tab = Tab.Inicio
+            }
+            MainScaffold(
+                viewModel = viewModel,
+                state = state,
+                tab = tab,
+                onTabChange = { tab = it },
+            )
+        }
 
         screen == Screen.Register -> RegisterScreen(
             isLoading = state.isLoading,
@@ -99,19 +109,23 @@ private fun MainScaffold(
     val stats by viewModel.stats.collectAsState()
     val justificaciones by viewModel.justificaciones.collectAsState()
     val asistencias by viewModel.asistencias.collectAsState()
+    val adminJustificaciones by viewModel.adminJustificaciones.collectAsState()
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             NavigationBar {
-                Tab.entries.forEach { item ->
-                    NavigationBarItem(
-                        selected = tab == item,
-                        onClick = { onTabChange(item) },
-                        icon = { Icon(item.icon, null) },
-                        label = { Text(item.label) },
-                    )
-                }
+                // El tab Admin solo aparece para usuarios con rol administrador.
+                Tab.entries
+                    .filter { it != Tab.Admin || state.isAdmin }
+                    .forEach { item ->
+                        NavigationBarItem(
+                            selected = tab == item,
+                            onClick = { onTabChange(item) },
+                            icon = { Icon(item.icon, null) },
+                            label = { Text(item.label) },
+                        )
+                    }
             }
         },
     ) { padding ->
@@ -140,9 +154,16 @@ private fun MainScaffold(
                     onLoad = viewModel::loadAsistencias,
                 )
 
+                Tab.Admin -> AdminScreen(
+                    state = adminJustificaciones,
+                    onLoad = viewModel::loadAdminJustificaciones,
+                    onUpdate = viewModel::updateJustificacionEstado,
+                )
+
                 Tab.Perfil -> PerfilScreen(
                     username = state.username,
                     fullName = state.fullName,
+                    isAdmin = state.isAdmin,
                     onLogout = viewModel::logout,
                 )
             }

@@ -7,10 +7,12 @@ import mysql from "mysql2/promise";
  * Los hashes de PHP `password_hash()` (bcrypt) son verificables con bcryptjs.
  * Las tablas de justificaciones/asistencias son propias de la app.
  */
-export function createMysqlStore(cfg) {
+export function createMysqlStore(cfg, { adminUsernames = [] } = {}) {
   if (!cfg.database) {
     throw new Error("DB_DRIVER=mysql requiere DB_NAME (base de datos)");
   }
+
+  const isAdmin = (username) => adminUsernames.includes(username);
 
   let pool;
 
@@ -110,6 +112,9 @@ export function createMysqlStore(cfg) {
             id: row.id,
             username: row.username,
             fullName: row.full_name ?? "",
+            // En modo MySQL externo el rol se calcula por configuración
+            // (ADMIN_USERNAMES) sin modificar la base del instituto.
+            role: isAdmin(row.username) ? "admin" : "estudiante",
             createdAt: null,
           }
         : null;
@@ -162,6 +167,33 @@ export function createMysqlStore(cfg) {
       const [rows] = await q().query(`SELECT * FROM \`${justTable}\` WHERE id = ?`, [
         result.insertId,
       ]);
+      return rows[0] ?? null;
+    },
+
+    // ---- admin ----
+    async listAllJustificaciones() {
+      const userTable = clean(cfg.table);
+      const idCol = clean(cfg.idColumn);
+      const usernameCol = clean(cfg.usernameColumn);
+      const fullNameCol = cfg.fullNameColumn ? clean(cfg.fullNameColumn) : null;
+      const [rows] = await q().query(
+        `SELECT j.*, u.\`${usernameCol}\` AS username ${
+          fullNameCol ? `, u.\`${fullNameCol}\` AS fullName` : ""
+        }
+         FROM \`${justTable}\` j
+         JOIN \`${userTable}\` u ON u.\`${idCol}\` = j.user_id
+         ORDER BY j.created_at DESC, j.id DESC`
+      );
+      return rows;
+    },
+
+    async setJustificacionEstado(id, estado) {
+      const [result] = await q().query(
+        `UPDATE \`${justTable}\` SET estado = ? WHERE id = ?`,
+        [estado, id]
+      );
+      if (result.affectedRows === 0) return null;
+      const [rows] = await q().query(`SELECT * FROM \`${justTable}\` WHERE id = ?`, [id]);
       return rows[0] ?? null;
     },
 

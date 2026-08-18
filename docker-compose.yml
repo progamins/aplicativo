@@ -35,6 +35,7 @@ services:
       DB_PASSWORD_COL: ${DB_PASSWORD_COL:-password}
       DB_FULLNAME_COL: ${DB_FULLNAME_COL:-}
       ENABLE_REGISTER: ${ENABLE_REGISTER:-true}
+      ADMIN_USERNAMES: ${ADMIN_USERNAMES:-}
     volumes:
       - api-data:/app/data
     healthcheck:

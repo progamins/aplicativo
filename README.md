@@ -121,6 +121,24 @@ Con `ENABLE_REGISTER=false` el registro queda deshabilitado (403) y la API solo 
 | `POST` | `/api/auth/refresh` | Rotar refresh token → nuevo par de tokens | refresh token |
 | `POST` | `/api/auth/logout` | Revocar refresh token (204) | refresh token |
 | `GET` | `/api/auth/me` | Perfil del usuario autenticado | `Bearer <accessToken>` |
+| `GET` | `/api/justificaciones` | Justificaciones del usuario | `Bearer` |
+| `POST` | `/api/justificaciones` | Crear justificación `{ motivo, fecha, detalle? }` | `Bearer` |
+| `GET` | `/api/asistencias` | Historial de asistencias | `Bearer` |
+| `GET` | `/api/estadisticas` | Resumen (justificaciones, pendientes, asistencias) | `Bearer` |
+| `GET` | `/api/admin/justificaciones` | **Admin:** todas las justificaciones con datos del estudiante | `Bearer` + rol admin |
+| `PATCH` | `/api/admin/justificaciones/:id` | **Admin:** aprobar/rechazar `{ "estado": "aprobada" | "rechazada" }` | `Bearer` + rol admin |
+
+## 👥 Roles y panel de administración
+
+- Los usuarios tienen rol `estudiante` por defecto. Los administradores se declaran con la variable `ADMIN_USERNAMES` (separados por coma):
+
+  ```bash
+  ADMIN_USERNAMES=edwin,maria   # .env
+  ```
+
+- En **SQLite** el rol se guarda en la tabla `users` (migración automática) y `ADMIN_USERNAMES` es la fuente de verdad (funciona también para usuarios registrados después del arranque).
+- En **modo MySQL** (iestp) el rol se calcula por configuración **sin tocar la base del instituto**.
+- La app muestra el tab **Admin** (barra inferior) solo a usuarios con rol admin, con el listado de solicitudes de todos los estudiantes y botones **Aprobar/Rechazar**; el estudiante ve el nuevo estado en su listado al instante.
 
 ## 🔐 Seguridad
 
@@ -137,9 +155,9 @@ Con `ENABLE_REGISTER=false` el registro queda deshabilitado (403) y la API solo 
 
 | Capa | Tecnologías |
 |---|---|
-| **App Android** | Kotlin 2.0 · Jetpack Compose (Material 3) · Retrofit 2 · OkHttp 4 · kotlinx-serialization · ViewModel + StateFlow |
+| **App Android** | Kotlin 2.0 · Jetpack Compose (Material 3) · Retrofit 2 · OkHttp 4 · kotlinx-serialization · ViewModel + StateFlow · Navegación con tabs (Inicio, Justificaciones, Asistencias, Admin, Perfil) |
 | **API** | Node.js 24 · Express 4 · SQLite (`node:sqlite`) / MySQL (`mysql2`) · bcryptjs · jsonwebtoken · express-rate-limit · zod · helmet · pino · compression |
-| **Tests** | `node:test` + supertest (15 tests) |
+| **Tests** | `node:test` + supertest (30 tests: auth, académico y admin) |
 | **Ops** | Docker multi-stage no-root · docker-compose (perfil MySQL) · Gradle 8.7 + AGP 8.5 (version catalog) |
 
 ## 📂 Estructura
@@ -153,13 +171,13 @@ aplicativo-java/
 │       │   ├── SessionManager.kt       # access + refresh token persistente
 │       │   ├── model/Models.kt         # DTOs (kotlinx-serialization)
 │       │   └── remote/                 # Retrofit + interceptor de refresh
-│       └── ui/                         # AuthViewModel + Login/Register/Home
+│       └── ui/                         # AuthViewModel + Login/Register/Home/Justificaciones/Asistencias/Admin/Perfil
 ├── server/                             # API REST
 │   ├── src/
 │   │   ├── index.js · app.js · config.js · db.js · tokens.js · logger.js
-│   │   ├── controllers/ · routes/ · middleware/
+│   │   ├── controllers/ · routes/ · middleware/   # incluye admin.routes.js
 │   │   └── stores/                     # sqlite.store.js · mysql.store.js
-│   ├── test/auth.test.js               # 15 tests de integración
+│   ├── test/                           # auth, academic y admin (30 tests)
 │   ├── Dockerfile · .dockerignore
 │   └── package.json
 ├── docker-compose.yml                  # API + perfil MySQL (iestp)

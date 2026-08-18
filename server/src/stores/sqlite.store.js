@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-export function createSqliteStore(dbPath) {
+export function createSqliteStore(dbPath, { adminUsernames = [] } = {}) {
   const path = dbPath === ":memory:" ? ":memory:" : resolve(dbPath);
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
 
@@ -16,6 +16,7 @@ export function createSqliteStore(dbPath) {
       username      TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       full_name     TEXT NOT NULL DEFAULT '',
+      role          TEXT NOT NULL DEFAULT 'estudiante',
       created_at    TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -53,9 +54,26 @@ export function createSqliteStore(dbPath) {
     CREATE INDEX IF NOT EXISTS idx_asistencias_user ON asistencias(user_id);
   `);
 
+  // Migración: bases creadas antes de la v3.1 no tienen la columna `role`.
+  const userCols = db.prepare("PRAGMA table_info(users)").all();
+  if (!userCols.some((c) => c.name === "role")) {
+    db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'estudiante'");
+  }
+
+  const isAdmin = (username) =>
+    // Fuente de verdad: ADMIN_USERNAMES (funciona también para usuarios que se
+    // registran después del arranque). El valor de BD es solo un refuerzo.
+    adminUsernames.includes(username) || db.prepare("SELECT role FROM users WHERE username = ?").get(username)?.role === "admin";
+
   const toPublicUser = (row) =>
     row
-      ? { id: row.id, username: row.username, fullName: row.full_name, createdAt: row.created_at }
+      ? {
+          id: row.id,
+          username: row.username,
+          fullName: row.full_name ?? "",
+          role: isAdmin(row.username) ? "admin" : "estudiante",
+          createdAt: row.created_at,
+        }
       : null;
 
   return {
@@ -71,7 +89,7 @@ export function createSqliteStore(dbPath) {
     findUserById(id) {
       return (
         db
-          .prepare("SELECT id, username, full_name, created_at FROM users WHERE id = ?")
+          .prepare("SELECT id, username, full_name, role, created_at FROM users WHERE id = ?")
           .get(id) ?? null
       );
     },
@@ -139,6 +157,27 @@ export function createSqliteStore(dbPath) {
         )
         .run(userId, motivo, fecha, detalle);
       return db.prepare("SELECT * FROM justificaciones WHERE id = ?").get(result.lastInsertRowid);
+    },
+
+    // ---- admin ----
+    listAllJustificaciones() {
+      return db
+        .prepare(
+          `SELECT j.id, j.user_id, j.motivo, j.detalle, j.fecha, j.estado, j.created_at,
+                  u.username, u.full_name AS fullName
+           FROM justificaciones j
+           JOIN users u ON u.id = j.user_id
+           ORDER BY j.created_at DESC, j.id DESC`
+        )
+        .all();
+    },
+
+    setJustificacionEstado(id, estado) {
+      const result = db
+        .prepare("UPDATE justificaciones SET estado = ? WHERE id = ?")
+        .run(estado, id);
+      if (result.changes === 0) return null;
+      return db.prepare("SELECT * FROM justificaciones WHERE id = ?").get(id);
     },
 
     // ---- asistencias ----

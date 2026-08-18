@@ -17,6 +17,13 @@ export const config = {
 
   corsOrigin: process.env.CORS_ORIGIN || "*",
 
+  // Usuarios administradores (separados por coma). En SQLite se marcan con
+  // rol 'admin' al arrancar; en modo MySQL se calcula sin tocar la BD externa.
+  adminUsernames: (process.env.ADMIN_USERNAMES || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
+
   dbDriver: process.env.DB_DRIVER || "sqlite",
   dbPath: process.env.DB_PATH || "./data/app.db",
 
