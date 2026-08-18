@@ -125,20 +125,14 @@ Con `ENABLE_REGISTER=false` el registro queda deshabilitado (403) y la API solo 
 | `POST` | `/api/justificaciones` | Crear justificación `{ motivo, fecha, detalle? }` | `Bearer` |
 | `GET` | `/api/asistencias` | Historial de asistencias | `Bearer` |
 | `GET` | `/api/estadisticas` | Resumen (justificaciones, pendientes, asistencias) | `Bearer` |
-| `GET` | `/api/admin/justificaciones` | **Admin:** todas las justificaciones con datos del estudiante | `Bearer` + rol admin |
-| `PATCH` | `/api/admin/justificaciones/:id` | **Admin:** aprobar/rechazar `{ "estado": "aprobada" | "rechazada" }` | `Bearer` + rol admin |
+| `GET` | `/api/admin/justificaciones` | **Opcional (futura web):** todas las justificaciones con datos del estudiante | `Bearer` + rol admin |
+| `PATCH` | `/api/admin/justificaciones/:id` | **Opcional (futura web):** aprobar/rechazar `{ "estado": "aprobada" | "rechazada" }` | `Bearer` + rol admin |
 
-## 👥 Roles y panel de administración
+## 🎓 Centrada en el estudiante
 
-- Los usuarios tienen rol `estudiante` por defecto. Los administradores se declaran con la variable `ADMIN_USERNAMES` (separados por coma):
+La app Android es **100% para estudiantes**: inicio con resumen, justificaciones, asistencias y perfil — sin nada de administración.
 
-  ```bash
-  ADMIN_USERNAMES=edwin,maria   # .env
-  ```
-
-- En **SQLite** el rol se guarda en la tabla `users` (migración automática) y `ADMIN_USERNAMES` es la fuente de verdad (funciona también para usuarios registrados después del arranque).
-- En **modo MySQL** (iestp) el rol se calcula por configuración **sin tocar la base del instituto**.
-- La app muestra el tab **Admin** (barra inferior) solo a usuarios con rol admin, con el listado de solicitudes de todos los estudiantes y botones **Aprobar/Rechazar**; el estudiante ve el nuevo estado en su listado al instante.
+El backend conserva endpoints de administración (`/api/admin/*`, protegidos con rol `admin` declarado vía `ADMIN_USERNAMES`) **opcionales**, pensados para un futuro panel web del instituto. La app no los usa ni los muestra.
 
 ## 🔐 Seguridad
 
@@ -155,7 +149,7 @@ Con `ENABLE_REGISTER=false` el registro queda deshabilitado (403) y la API solo 
 
 | Capa | Tecnologías |
 |---|---|
-| **App Android** | Kotlin 2.0 · Jetpack Compose (Material 3) · Retrofit 2 · OkHttp 4 · kotlinx-serialization · ViewModel + StateFlow · Navegación con tabs (Inicio, Justificaciones, Asistencias, Admin, Perfil) |
+| **App Android** | Kotlin 2.0 · Jetpack Compose (Material 3) · Retrofit 2 · OkHttp 4 · kotlinx-serialization · ViewModel + StateFlow · Tabs de estudiante (Inicio, Justificaciones, Asistencias, Perfil) |
 | **API** | Node.js 24 · Express 4 · SQLite (`node:sqlite`) / MySQL (`mysql2`) · bcryptjs · jsonwebtoken · express-rate-limit · zod · helmet · pino · compression |
 | **Tests** | `node:test` + supertest (30 tests: auth, académico y admin) |
 | **Ops** | Docker multi-stage no-root · docker-compose (perfil MySQL) · Gradle 8.7 + AGP 8.5 (version catalog) |
@@ -171,7 +165,7 @@ aplicativo-java/
 │       │   ├── SessionManager.kt       # access + refresh token persistente
 │       │   ├── model/Models.kt         # DTOs (kotlinx-serialization)
 │       │   └── remote/                 # Retrofit + interceptor de refresh
-│       └── ui/                         # AuthViewModel + Login/Register/Home/Justificaciones/Asistencias/Admin/Perfil
+│       └── ui/                         # AuthViewModel + Login/Register/Home/Justificaciones/Asistencias/Perfil
 ├── server/                             # API REST
 │   ├── src/
 │   │   ├── index.js · app.js · config.js · db.js · tokens.js · logger.js

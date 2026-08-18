@@ -1,6 +1,5 @@
 package com.example.login.data.remote
 
-import com.example.login.data.model.AdminJustificacionesResponse
 import com.example.login.data.model.AsistenciasResponse
 import com.example.login.data.model.AuthResponse
 import com.example.login.data.model.CreateJustificacionRequest
@@ -12,13 +11,9 @@ import com.example.login.data.model.LogoutRequest
 import com.example.login.data.model.MeResponse
 import com.example.login.data.model.RefreshRequest
 import com.example.login.data.model.RegisterRequest
-import com.example.login.data.model.UpdateJustificacionEstadoRequest
-import com.example.login.data.model.UpdateJustificacionEstadoResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.PATCH
 import retrofit2.http.POST
-import retrofit2.http.Path
 
 interface ApiService {
 
@@ -47,16 +42,6 @@ interface ApiService {
 
     @GET("api/estadisticas")
     suspend fun estadisticas(): EstadisticasResponse
-
-    // ── Admin ──
-    @GET("api/admin/justificaciones")
-    suspend fun adminJustificaciones(): AdminJustificacionesResponse
-
-    @PATCH("api/admin/justificaciones/{id}")
-    suspend fun updateJustificacionEstado(
-        @Path("id") id: Long,
-        @Body body: UpdateJustificacionEstadoRequest,
-    ): UpdateJustificacionEstadoResponse
 }
 
 /** Variante síncrona (Call) solo para renovar el token desde el interceptor. */

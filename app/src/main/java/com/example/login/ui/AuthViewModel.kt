@@ -3,7 +3,6 @@ package com.example.login.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.login.data.SessionManager
-import com.example.login.data.model.AdminJustificacion
 import com.example.login.data.model.ApiError
 import com.example.login.data.model.Asistencia
 import com.example.login.data.model.AuthResponse
@@ -12,7 +11,6 @@ import com.example.login.data.model.Justificacion
 import com.example.login.data.model.LoginRequest
 import com.example.login.data.model.LogoutRequest
 import com.example.login.data.model.RegisterRequest
-import com.example.login.data.model.UpdateJustificacionEstadoRequest
 import com.example.login.data.remote.ApiClient
 import java.io.IOException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +23,6 @@ data class AuthUiState(
     val isLoggedIn: Boolean = false,
     val username: String = "",
     val fullName: String = "",
-    val isAdmin: Boolean = false,
     val error: String? = null,
 )
 
@@ -46,12 +43,6 @@ data class StatsUiState(
     val pendientes: Int = 0,
     val totalAsistencias: Int = 0,
     val presentes: Int = 0,
-)
-
-data class AdminJustificacionesUiState(
-    val isLoading: Boolean = false,
-    val items: List<AdminJustificacion> = emptyList(),
-    val error: String? = null,
 )
 
 class AuthViewModel : ViewModel() {
@@ -76,9 +67,6 @@ class AuthViewModel : ViewModel() {
     private val _stats = MutableStateFlow(StatsUiState())
     val stats: StateFlow<StatsUiState> = _stats
 
-    private val _adminJustificaciones = MutableStateFlow(AdminJustificacionesUiState())
-    val adminJustificaciones: StateFlow<AdminJustificacionesUiState> = _adminJustificaciones
-
     init {
         if (!SessionManager.accessToken.isNullOrBlank()) validateSession()
     }
@@ -88,7 +76,7 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val me = ApiClient.api.me()
-                storeUser(me.user.username, me.user.fullName, me.user.role)
+                storeUser(me.user.username, me.user.fullName)
                 loadDashboard()
             } catch (_: Exception) {
                 SessionManager.clear()
@@ -137,32 +125,6 @@ class AuthViewModel : ViewModel() {
         loadJustificaciones()
         loadAsistencias()
         loadStats()
-        if (_uiState.value.isAdmin) loadAdminJustificaciones()
-    }
-
-    fun loadAdminJustificaciones() {
-        viewModelScope.launch {
-            _adminJustificaciones.value =
-                _adminJustificaciones.value.copy(isLoading = true, error = null)
-            try {
-                val res = ApiClient.api.adminJustificaciones()
-                _adminJustificaciones.value = AdminJustificacionesUiState(items = res.justificaciones)
-            } catch (e: Exception) {
-                _adminJustificaciones.value = AdminJustificacionesUiState(error = e.toUserMessage())
-            }
-        }
-    }
-
-    fun updateJustificacionEstado(id: Long, estado: String) {
-        viewModelScope.launch {
-            try {
-                ApiClient.api.updateJustificacionEstado(id, UpdateJustificacionEstadoRequest(estado))
-                loadAdminJustificaciones()
-            } catch (e: Exception) {
-                _adminJustificaciones.value =
-                    _adminJustificaciones.value.copy(error = e.toUserMessage())
-            }
-        }
     }
 
     fun loadJustificaciones() {
@@ -223,16 +185,10 @@ class AuthViewModel : ViewModel() {
 
     // ── Helpers ──
 
-    private fun storeUser(username: String, fullName: String, role: String = "estudiante") {
+    private fun storeUser(username: String, fullName: String) {
         SessionManager.username = username
         SessionManager.fullName = fullName
-        SessionManager.role = role
-        _uiState.value = AuthUiState(
-            isLoggedIn = true,
-            username = username,
-            fullName = fullName,
-            isAdmin = role == "admin",
-        )
+        _uiState.value = AuthUiState(isLoggedIn = true, username = username, fullName = fullName)
     }
 
     private fun authCall(block: suspend () -> AuthResponse) {
@@ -242,7 +198,7 @@ class AuthViewModel : ViewModel() {
                 val response = block()
                 SessionManager.accessToken = response.accessToken
                 SessionManager.refreshToken = response.refreshToken
-                storeUser(response.user.username, response.user.fullName, response.user.role)
+                storeUser(response.user.username, response.user.fullName)
                 loadDashboard()
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.toUserMessage())

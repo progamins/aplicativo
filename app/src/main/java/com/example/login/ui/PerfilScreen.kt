@@ -42,7 +42,6 @@ import com.example.login.ui.theme.TextPrimary
 fun PerfilScreen(
     username: String,
     fullName: String,
-    isAdmin: Boolean = false,
     onLogout: () -> Unit,
 ) {
     val displayName = fullName.ifBlank { username }
@@ -57,21 +56,30 @@ fun PerfilScreen(
     ) {
         Spacer(Modifier.height(16.dp))
 
+        // Anillo de gradiente alrededor del avatar
         Box(
             modifier = Modifier
-                .size(92.dp)
-                .clip(CircleShape)
-                .background(BrandGradient),
+                .size(108.dp)
+                .background(BrandGradient, CircleShape)
+                .padding(4.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = initial,
-                fontSize = 38.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-            )
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(CircleShape)
+                    .background(CardColor),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = initial,
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                )
+            }
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(16.dp))
         Text(
             text = displayName,
             fontSize = 24.sp,
@@ -95,7 +103,6 @@ fun PerfilScreen(
             Column(Modifier.padding(18.dp)) {
                 ProfileRow("Nombre", fullName.ifBlank { "—" })
                 ProfileRow("Usuario", username)
-                ProfileRow("Rol", if (isAdmin) "Administrador" else "Estudiante")
                 ProfileRow("Sistema", "Gestión académica")
             }
         }

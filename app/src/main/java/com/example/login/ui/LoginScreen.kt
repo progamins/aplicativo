@@ -97,14 +97,13 @@ fun LoginScreen(
 
             Spacer(Modifier.height(22.dp))
             Text(
-                text = "Aplicativo Login",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
+                text = "Sistema Académico",
+                style = MaterialTheme.typography.headlineLarge,
                 color = TextPrimary,
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Acceso al sistema académico",
+                text = "Acceso a tu cuenta de estudiante",
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextMuted,
             )

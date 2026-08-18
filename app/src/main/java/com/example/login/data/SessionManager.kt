@@ -35,12 +35,6 @@ object SessionManager {
             prefs.edit().putString(KEY_FULLNAME, value).apply()
         }
 
-    var role: String?
-        get() = prefs.getString(KEY_ROLE, null)
-        set(value) {
-            prefs.edit().putString(KEY_ROLE, value).apply()
-        }
-
     fun clear() {
         prefs.edit().clear().apply()
     }
@@ -49,5 +43,4 @@ object SessionManager {
     private const val KEY_REFRESH = "refresh_token"
     private const val KEY_USERNAME = "username"
     private const val KEY_FULLNAME = "full_name"
-    private const val KEY_ROLE = "role"
 }

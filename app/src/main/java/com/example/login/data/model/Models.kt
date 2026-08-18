@@ -1,6 +1,5 @@
 package com.example.login.data.model
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -31,11 +30,8 @@ data class UserDto(
     val id: Long,
     val username: String,
     val fullName: String = "",
-    val role: String = "estudiante",
     val createdAt: String? = null,
-) {
-    val isAdmin: Boolean get() = role == "admin"
-}
+)
 
 @Serializable
 data class AuthResponse(
@@ -78,35 +74,6 @@ data class CreateJustificacionRequest(
 
 @Serializable
 data class CreateJustificacionResponse(
-    val justificacion: Justificacion,
-)
-
-// ── Admin: justificaciones de todos los estudiantes ──
-@Serializable
-data class AdminJustificacion(
-    val id: Long,
-    @SerialName("user_id") val userId: Long = 0,
-    val username: String = "",
-    val fullName: String = "",
-    val motivo: String,
-    val detalle: String = "",
-    val fecha: String,
-    val estado: String = "pendiente",
-    val createdAt: String? = null,
-)
-
-@Serializable
-data class AdminJustificacionesResponse(
-    val justificaciones: List<AdminJustificacion>,
-)
-
-@Serializable
-data class UpdateJustificacionEstadoRequest(
-    val estado: String,
-)
-
-@Serializable
-data class UpdateJustificacionEstadoResponse(
     val justificacion: Justificacion,
 )
 

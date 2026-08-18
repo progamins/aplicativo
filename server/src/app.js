@@ -34,7 +34,7 @@ export function createApp() {
     res.json({
       status: "ok",
       service: "aplicativo-java-api",
-      version: "3.1.0",
+      version: "3.2.0",
       db: config.dbDriver,
       time: new Date().toISOString(),
     });
